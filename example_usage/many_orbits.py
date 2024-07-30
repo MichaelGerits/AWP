@@ -8,8 +8,8 @@ Many orbits script
 
 # Python standard libraries
 from sys import path
-path.append( '../src/python_tools' )
-
+#adding in a new path for the custom files to work too
+path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
 # AWP libraries
 from Spacecraft import Spacecraft as SC
 from planetary_data import earth

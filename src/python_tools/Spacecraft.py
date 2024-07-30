@@ -313,6 +313,7 @@ class Spacecraft:
 
 	def plot_3d( self, args = { 'show': True } ):
 		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
+		pt.plot_states(self.ets, self.states)
 
 	def plot_groundtracks( self, args = { 'show': True } ):
 		if not self.latlons_calculated:

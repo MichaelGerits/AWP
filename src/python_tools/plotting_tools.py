@@ -14,6 +14,7 @@ plt.style.use( 'dark_background' )
 
 import cities_lat_long
 
+#adds conversion rates fro diffrent units
 time_handler = {
 	'seconds': { 'coeff': 1.0,        'xlabel': 'Time (seconds)' },
 	'hours'  : { 'coeff': 3600.0,     'xlabel': 'Time (hours)'   },
@@ -33,6 +34,7 @@ COLORS = [
 	'm', 'deeppink', 'chartreuse', 'w', 'springgreen', 'peachpuff',
 	'white', 'lightpink', 'royalblue', 'lime', 'aqua' ] * 100
 
+#loads the files
 COASTLINES_COORDINATES_FILE = os.path.join(
 	os.path.dirname( os.path.realpath( __file__ ) ),
 	os.path.join( '..', '..', 'data', 'earth_data', 'coastlines.csv' )
