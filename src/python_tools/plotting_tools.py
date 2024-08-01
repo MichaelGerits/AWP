@@ -10,7 +10,7 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import animation
+from tinyQuaternion import Quaternion
 plt.style.use( 'dark_background' )
 
 import cities_lat_long
@@ -217,6 +217,7 @@ def plot_orbits( rs, args, vectors = [] ):
 		'cb_SOI_color' : 'c',
 		'cb_SOI_alpha' : 0.7,
 		'cb_axes'      : True,
+		'lb_axes'	   : True,
 		'cb_axes_mag'  : 2,
 		'cb_cmap'      : 'Blues',
 		'cb_axes_color': 'w',
@@ -260,9 +261,10 @@ def plot_orbits( rs, args, vectors = [] ):
 			ax.plot( rg[ :, 0 ], rg[ :, 1 ], rg[ :, 2 ], cs[ n ], zorder = 10 )
 			ax.plot( [ rg[ 0, 0 ] ], [ rg[ 0, 1 ] ], [ rg[ 0, 2 ] ], cs[ n ] + 'o', zorder = 10 )			
 
-		max_val = max( [ np.linalg.norm(_r.max(axis=1))/2, max_val ] )
-		n += 1
+		max_val = max( [ abs(_r).max(), max_val ] )
 
+		n += 1
+	#plots the vectors
 	for vector in vectors:
 		ax.quiver( 0, 0, 0,
 			vector[ 'r' ][ 0 ], vector[ 'r' ][ 1 ], vector[ 'r' ][ 2 ],
@@ -292,7 +294,7 @@ def plot_orbits( rs, args, vectors = [] ):
 			color = _args[ 'cb_SOI_color' ],
 			alpha = _args[ 'cb_SOI_alpha' ] )
 
-	#plots the central body axes
+	#plots the global axes
 	if _args[ 'cb_axes' ]:
 		l       = _args[ 'cb_radius' ] * _args[ 'cb_axes_mag' ]
 		x, y, z = [ [ 0, 0, 0 ], [ 0, 0, 0  ], [ 0, 0, 0 ] ]
@@ -1074,6 +1076,7 @@ def animate_orbits(rs, args, vectors = []):
 		'cb_SOI_color' : 'c',
 		'cb_SOI_alpha' : 0.7,
 		'cb_axes'      : True,
+		'lb_axes'	   : True,
 		'cb_axes_mag'  : 2,
 		'cb_cmap'      : 'Blues',
 		'cb_axes_color': 'w',
@@ -1088,7 +1091,8 @@ def animate_orbits(rs, args, vectors = []):
 		'show'         : False,
 		'ani_name'     : 'orbit.gif',
 		'dpi'          : 100,
-		'frames'	   : 100,
+		'frames'	   : None,
+
 		'vector_colors': [ '' ] * len( vectors ),
 		'vector_labels': [ '' ] * len( vectors ),
 		'vector_texts' : False
@@ -1097,10 +1101,15 @@ def animate_orbits(rs, args, vectors = []):
 		_args[ key ] = args[ key ]
 	
 	frames = _args['frames']
+	#account for small amount of steps so there aren't too many frames
+	if frames == None or frames > np.shape(rs)[1]:
+		print("changed framesto match steps")
+		frames = np.shape(rs)[1]
 
 	#generate all the frames
 	print("rendering frames")
 	for frame in range(frames):
+		print(f'rendering frame: {frame+1} out of {frames}...')
 		max_val = 0
 		n       = 0
 
@@ -1118,18 +1127,32 @@ def animate_orbits(rs, args, vectors = []):
 
 			#plots the starting point
 			ax.plot( [ _r[ 0, 0 ] ], [ _r[ 0 , 1 ] ], [ _r[ 0, 2 ] ], 'o',
-				color = _args[ 'colors' ][ n ] )
+				color = _args[ 'colors' ][ n ] )			
 
-			#plots the groundtrack
-			if _args[ 'groundtracks' ]:
-				rg  = _r / np.linalg.norm( r, axis = 1 ).reshape( ( r.shape[ 0 ], 1 ) )
-				rg *= _args[ 'cb_radius' ]
-
-				ax.plot( rg[ :, 0 ], rg[ :, 1 ], rg[ :, 2 ], cs[ n ], zorder = 10 )
-				ax.plot( [ rg[ 0, 0 ] ], [ rg[ 0, 1 ] ], [ rg[ 0, 2 ] ], cs[ n ] + 'o', zorder = 10 )			
-
-			max_val = max( [ np.linalg.norm(_r.max(axis=1))/2, max_val ] )
+			max_val = max( [ abs(_r).max(), max_val ] )
 			n += 1
+
+			#plotting the local body axes TODO: fix
+			if _args[ 'lb_axes' ]:
+				l =  max_val * 0.3
+
+				#origin point of the SC
+				r1, r2, r3 = _r[frame, :3]
+				#x axis
+				#b11, b12, b13 = _r[frame, :3] + np.array([l, 0, 0])
+				b11, b12, b13 = np.array([l, 0, 0])
+				ax.quiver( r1, r2, r3, b11, b12, b13, color = 'b', lw=3, hatch='O' )
+
+				#y axis
+				#b21, b22, b23 = _r[frame, :3] + np.array([0, l, 0])
+				b21, b22, b23 = np.array([0, l, 0])
+				ax.quiver( r1, r2, r3, b21, b22, b23, color = 'g', capstyle= 'round', lw=3, hatch='O' )
+
+				#z-axis
+				#b31, b32, b33 = _r[frame, :3] + np.array([0, 0, l])
+				b31, b32, b33 = np.array([0, 0, l])
+				ax.quiver( r1, r2, r3, b31, b32, b33, color = 'r', lw=3, hatch='O' )
+
 
 		#plots the vectors
 		for vector in vectors:
@@ -1211,9 +1234,10 @@ def animate_orbits(rs, args, vectors = []):
 	images = [Image.open(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' ))) for frame in range(frames)]
 	print("frames have been created")
 
-	print("rendering gif")
-	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], duration=50, loop=10)
+	print("rendering gif...")
+	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], duration=frames/2, loop=10)
 	#emptying the frames folder
 	for frame in range(frames):
 		os.remove(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )))
+	print("Finished")
 	

@@ -74,11 +74,13 @@ class Spacecraft:
 				oc.state2period( self.config[ 'orbit_state' ], self.cb[ 'mu' ] )
 
 		#allocates memory for the initial orbital state
-		self.state0       = np.zeros( 7 )
-		#adds initial pos (3d) and vel (3d)
+		self.state0       = np.zeros( 11 )
+		#adds initial pos (3d) and vel (3d) + a 4d quaternoin
 		self.state0[ :6 ] = self.config[ 'orbit_state' ]
+		self.state0[ 6:10 ] = np.array([0. , 0.,  0., 0.]) #TODO: add this to the self config
+		#TODO: add angular momentum
 		#adds the initial mass
-		self.state0[  6 ] = self.config[ 'mass0' ]
+		self.state0[  10 ] = self.config[ 'mass0' ]
 
 		self.coes_calculated      = False
 		self.latlons_calculated   = False
@@ -217,11 +219,12 @@ class Spacecraft:
 		'''
 		initialises the original states and "derives" it for the ODE
 		'''
-		rx, ry, rz, vx, vy, vz, mass = state
+		rx, ry, rz, vx, vy, vz, q0, q1, q2, q3, mass = state
 		r         = np.array( [ rx, ry, rz ] )
 		v         = np.array( [ vx, vy, vz ] )
+		q 		  = np.array( [q0, q1,q2, q3] )
 		mass_dot  = 0.0 #time derivative of the mass
-		state_dot = np.zeros( 7 )
+		state_dot = np.zeros( 11 ) #TODO add angular momentum
 		et       += self.et0
 
 		#gravitational acc
@@ -234,7 +237,8 @@ class Spacecraft:
 		#getting intermediary equation since this is a second order ODE
 		state_dot[ :3  ] = v
 		state_dot[ 3:6 ] = a
-		state_dot[ 6   ] = mass_dot
+		state_dot[6:10] = np.zeros(4) #TODO edit this to be the dot
+		state_dot[ 10 ] = mass_dot
 		return state_dot
 
 	def propagate_orbit( self ):
@@ -311,7 +315,7 @@ class Spacecraft:
 
 		pt.plot_eclipse_array( self.ets, self.eclipse_array, args )
 
-	def plot_3d( self, ani= True, args = { 'show': True, 'ani_name': 'orbit.gif', 'traj_lws': 2} ):
+	def plot_3d( self, args, ani= True):
 		if ani == True:
 			pt.animate_orbits( [ self.states[ :, :3 ] ], args )
 		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
