@@ -311,7 +311,9 @@ class Spacecraft:
 
 		pt.plot_eclipse_array( self.ets, self.eclipse_array, args )
 
-	def plot_3d( self, args = { 'show': True } ):
+	def plot_3d( self, ani= True, args = { 'show': True, 'ani_name': 'orbit.gif', 'traj_lws': 2} ):
+		if ani == True:
+			pt.animate_orbits( [ self.states[ :, :3 ] ], args )
 		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
 
 	def plot_groundtracks( self, args = { 'show': True } ):

@@ -17,8 +17,9 @@ from Spacecraft import Spacecraft as SC
 from planetary_data import earth
 
 if __name__ == '__main__':
-	# coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
+	# coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , raan(deg), aop(deg), ta]
 	coes = [ earth[ 'radius' ] + 1000, 0.05, 30.0, 0.0, 0.0, 0.0 ]
+	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ]
 	sc   = SC(
 			{
 			'coes'       : coes,
@@ -28,4 +29,4 @@ if __name__ == '__main__':
 			'dt'         : 100.0,
 			'orbit_perts': { 'J2': True }
 			} )
-	sc.plot_3d()
+	sc.plot_3d(ani = True)
