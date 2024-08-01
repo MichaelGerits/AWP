@@ -35,7 +35,7 @@ def null_config():
 		'date0'          : '2021-04-01', #starting date
 		'et0'            : None, #ephemoris time = seconds since J2000
 		'frame'          : 'J2000',
-		'orbit_state'    : [], 	#orbit defined by position and velocity vector
+		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
 		'propagator'     : 'LSODA', #defines which ODE solver is used
@@ -66,19 +66,22 @@ class Spacecraft:
 		#if coes are passed in they are converted to an orbital state
 		if self.config[ 'coes' ]:
 			# 'oc' is for the orbit calculations lib
-			self.config[ 'orbit_state' ] = oc.coes2state( self.config[ 'coes' ],
-				mu = self.config[ 'cb' ][ 'mu' ] )
+			self.config[ 'orbit_state' ] = oc.coes2state( self.config[ 'coes' ], mu = self.config[ 'cb' ][ 'mu' ] )
+			#adds 0 rotation quaternion to the orbital state
+			self.config[ 'orbit_state' ] = np.append(self.config['orbit_state'], np.zeros(4))
+
 		#convert the optional amount of orbits to amount of seconds to simulate
 		if type( self.config[ 'tspan' ] ) == str:
 			self.config[ 'tspan' ] = float( self.config[ 'tspan'] ) *\
 				oc.state2period( self.config[ 'orbit_state' ], self.cb[ 'mu' ] )
 
 		#allocates memory for the initial orbital state
-		self.state0       = np.zeros( 11 )
+		self.state0 = np.zeros( 11 )
 		#adds initial pos (3d) and vel (3d) + a 4d quaternoin
-		self.state0[ :6 ] = self.config[ 'orbit_state' ]
-		self.state0[ 6:10 ] = np.array([0. , 0.,  0., 0.]) #TODO: add this to the self config
+		self.state0[ :10 ] = self.config[ 'orbit_state' ][ :10 ]
+		
 		#TODO: add angular momentum
+
 		#adds the initial mass
 		self.state0[  10 ] = self.config[ 'mass0' ]
 
@@ -317,7 +320,7 @@ class Spacecraft:
 
 	def plot_3d( self, args, ani= True):
 		if ani == True:
-			pt.animate_orbits( [ self.states[ :, :3 ] ], args )
+			pt.animate_orbits( len(self.ets),[ self.states[ :, :3 ] ],[self.states[:, 3:6]], self.states[:, 6:10], args )
 		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
 
 	def plot_groundtracks( self, args = { 'show': True } ):

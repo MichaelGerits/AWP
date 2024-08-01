@@ -19,27 +19,30 @@ import plotting_tools as pt
 import numpy as np
 
 aops   = np.arange( 0, 360, 90 )
-incs   = np.arange( 0, 90,  20 )
-tas    = [ 0, 5 ]
+incs   = np.arange( 0, 90,  10 )
 coes   = [ earth[ 'radius' ] + 10000, 0.05, 0.0, 0.0, 0.0, 0.0 ]
 scs    = []
 config = {
 	'tspan': '1',
-	'dt'   : 100.0
+
 }
 
-print( len( aops ) * len( incs ) * len( tas ) )
-
+print( len( aops ) * len( incs ))
+max_steps = 99999999999999999999999999999
+#TODO simulate simultaniosly to get rid of the problem
 if __name__ == '__main__':
 	for inc in incs:
 		for aop in aops:
-			for ta in tas:
-				coes[ 2 ] = inc
-				coes[ 4 ] = ta
-				coes[ 5 ] = aop
-				config[ 'coes' ] = coes
-				sc = SC( config )
-				scs.append( sc )
+			coes[ 2 ] = inc
+			coes[ 5 ] = aop
+			config[ 'coes' ] = coes
+			sc = SC( config )
+			if len(sc.ets) < max_steps:
+				max_steps = len(sc.ets)
+			scs.append( sc )
 
 	rs = [ sc.states[ :, :3 ] for sc in scs ]
-	pt.animate_orbits( rs,{ 'show': True, 'ani_name': 'mult_orbit.gif', 'traj_lws': 1})
+	vs = [ sc.states[ :, 3:6 ] for sc in scs ]
+	quats = [ sc.states[ :, 6:10 ] for sc in scs ]
+	#shape = (sc_amount, amount of simulated points, amount oflogged values)
+	pt.animate_orbits( max_steps, rs, vs, quats, args = { 'show': True, 'ani_name': 'mult_orbit.gif', 'lb_axes': False })

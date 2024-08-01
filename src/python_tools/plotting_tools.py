@@ -1058,11 +1058,7 @@ def plot_pseudopotential_contours( system, args ):
 
 	plt.close()
 
-def update(num, data, line):
-    line.set_data(data[:2, :num])
-    line.set_3d_properties(data[2, :num])
-
-def animate_orbits(rs, args, vectors = []):
+def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 
 	_args = {
 		'figsize'      : ( 10, 8 ),
@@ -1076,12 +1072,12 @@ def animate_orbits(rs, args, vectors = []):
 		'cb_SOI_color' : 'c',
 		'cb_SOI_alpha' : 0.7,
 		'cb_axes'      : True,
+		'or_axes'	   : True,
 		'lb_axes'	   : True,
 		'cb_axes_mag'  : 2,
 		'cb_cmap'      : 'Blues',
 		'cb_axes_color': 'w',
 		'axes_mag'     : 0.8,
-		'axes_custom'  : None,
 		'title'        : 'Trajectories',
 		'legend'       : False,
 		'axes_no_fill' : True,
@@ -1092,19 +1088,20 @@ def animate_orbits(rs, args, vectors = []):
 		'ani_name'     : 'orbit.gif',
 		'dpi'          : 100,
 		'frames'	   : None,
-
+		'axes_custom'  : None,
 		'vector_colors': [ '' ] * len( vectors ),
 		'vector_labels': [ '' ] * len( vectors ),
 		'vector_texts' : False
 	}
+
 	for key in args.keys():
 		_args[ key ] = args[ key ]
 	
 	frames = _args['frames']
 	#account for small amount of steps so there aren't too many frames
-	if frames == None or frames > np.shape(rs)[1]:
-		print("changed framesto match steps")
-		frames = np.shape(rs)[1]
+	if frames == None or frames >max_steps:
+		print("changed frames to match steps")
+		frames = max_steps
 
 	#generate all the frames
 	print("rendering frames")
@@ -1112,13 +1109,14 @@ def animate_orbits(rs, args, vectors = []):
 		print(f'rendering frame: {frame+1} out of {frames}...')
 		max_val = 0
 		n       = 0
-
 		fig = plt.figure( figsize = _args[ 'figsize' ] )
 		ax  = fig.add_subplot( 111, projection = '3d'  )
 
 		#plots all the orbits for each spacecraft
-		for r in rs:
+		for r, v, quat in zip(rs, vs, quats):
 			_r = r.copy() * dist_handler[ _args[ 'dist_unit' ] ]
+			_v = v.copy() * dist_handler[ _args[ 'dist_unit' ] ]
+			_quat = quat.copy()
 
 			#plots the line
 			ax.plot( _r[ :frame, 0 ], _r[ :frame, 1 ], _r[ :frame , 2 ],
@@ -1132,39 +1130,60 @@ def animate_orbits(rs, args, vectors = []):
 			max_val = max( [ abs(_r).max(), max_val ] )
 			n += 1
 
-			#plotting the local body axes TODO: fix
-			if _args[ 'lb_axes' ]:
+	#--------------------------------------------------------------------------------------------------
+
+			#plotting the orbital axes
+			if _args[ 'or_axes' ]:
 				l =  max_val * 0.3
 
 				#origin point of the SC
 				r1, r2, r3 = _r[frame, :3]
+				z_dir = _r[frame, :3]/np.linalg.norm(_r[frame, :3])
+				#correct x_axis for non-circularity by subtracting the projection on z
+				x_dir = (_v[frame, :3] - (np.dot(_v[frame, :3], z_dir)/np.dot(z_dir, z_dir))  * z_dir)/np.linalg.norm(_v[frame, :3])  
+				y_dir = -np.cross(z_dir, x_dir)
 				#x axis
-				#b11, b12, b13 = _r[frame, :3] + np.array([l, 0, 0])
-				b11, b12, b13 = np.array([l, 0, 0])
-				ax.quiver( r1, r2, r3, b11, b12, b13, color = 'b', lw=3, hatch='O' )
+				x1, x2, x3 = x_dir * l
+				ax.quiver( r1, r2, r3, x1, x2, x3, color = 'y', lw=2, hatch='O' )
 
 				#y axis
-				#b21, b22, b23 = _r[frame, :3] + np.array([0, l, 0])
-				b21, b22, b23 = np.array([0, l, 0])
-				ax.quiver( r1, r2, r3, b21, b22, b23, color = 'g', capstyle= 'round', lw=3, hatch='O' )
+				y1, y2, y3 = y_dir * l
+				ax.quiver( r1, r2, r3, y1, y2, y3, color = 'y', capstyle= 'round', lw=2, hatch='O' )
 
 				#z-axis
-				#b31, b32, b33 = _r[frame, :3] + np.array([0, 0, l])
-				b31, b32, b33 = np.array([0, 0, l])
-				ax.quiver( r1, r2, r3, b31, b32, b33, color = 'r', lw=3, hatch='O' )
+				z1, z2, z3 = -z_dir * l
+				ax.quiver( r1, r2, r3, z1, z2, z3, color = 'y', lw=2, hatch='O' )
 
+	#-----------------------------------------------------------------------------------------------------
 
-		#plots the vectors
-		for vector in vectors:
-			ax.quiver( 0, 0, 0,
-				vector[ 'r' ][ 0 ], vector[ 'r' ][ 1 ], vector[ 'r' ][ 2 ],
-				color = vector[ 'color' ], label = vector[ 'label' ] )
+			#plotting the local body axes
+			if _args['lb_axes']:
+				l =  max_val * 0.3
+				_q = Quaternion(q=_quat)
 
-			if _args[ 'vector_texts' ]:
-				vector[ 'r' ] *= _args[ 'vector_text_scale' ]
-				ax.text( vector[ 'r' ][ 0 ], vector[ 'r' ][ 1 ], vector[ 'r' ][ 2 ],
-					vector[ 'label' ],
-					color = vector[ 'color' ] )
+				#origin point of the SC
+				r1, r2, r3 = _r[frame, :3]
+				if np.linalg.norm(_quat) == 0:
+					b1_dir = np.array([1, 0., 0.])
+					b2_dir = np.array([0., 1, 0.])
+					b3_dir = np.array([0., 0., 1])
+
+				else:
+					b1_dir = _q.rotatePoint(np.array([1, 0., 0.]))
+					b2_dir = _q.rotatePoint(np.array([0., 1, 0.]))
+					b3_dir = _q.rotatePoint(np.array([0., 0., 1]))
+
+				#b1 axis
+				b11, b12, b13 = b1_dir * l
+				ax.quiver( r1, r2, r3, b11, b12, b13, color = 'b', lw=2, hatch='O' )
+
+				#b2 axis
+				b21, b22, b23 = b2_dir * l
+				ax.quiver( r1, r2, r3, b21, b22, b23, color = 'g', capstyle= 'round', lw=2, hatch='O' )
+
+				#b3 axis
+				b31, b32, b33 = b3_dir * l
+				ax.quiver( r1, r2, r3, b31, b32, b33, color = 'r', lw=2, hatch='O' )
 
 		#plots the central body sphere
 		_args[ 'cb_radius' ] *= dist_handler[ _args[ 'dist_unit' ] ]
