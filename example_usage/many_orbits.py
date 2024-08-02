@@ -8,8 +8,8 @@ Many orbits script
 
 # Python standard libraries
 from sys import path
-#adding in a new path for the custom files to work too
-path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
+path.append( '../src/python_tools' )
+
 # AWP libraries
 from Spacecraft import Spacecraft as SC
 from planetary_data import earth
@@ -20,7 +20,7 @@ import numpy as np
 
 aops   = np.arange( 0, 360, 90 )
 incs   = np.arange( 0, 90,  20 )
-tas    = [ 0, 5 ]
+tas    = [ 0, 180 ]
 coes   = [ earth[ 'radius' ] + 10000, 0.05, 0.0, 0.0, 0.0, 0.0 ]
 scs    = []
 config = {
@@ -42,4 +42,8 @@ if __name__ == '__main__':
 				scs.append( sc )
 
 	rs = [ sc.states[ :, :3 ] for sc in scs ]
-	pt.animate_orbits( rs,{ 'show': True, 'ani_name': 'mult_orbit.gif', 'traj_lws': 1})
+	pt.plot_orbits( rs,
+		{
+		'traj_lws': 1,
+		'show'    : True
+		} )

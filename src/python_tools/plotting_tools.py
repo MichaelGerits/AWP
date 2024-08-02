@@ -10,12 +10,10 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import animation
 plt.style.use( 'dark_background' )
 
 import cities_lat_long
 
-#adds conversion rates fro diffrent units
 time_handler = {
 	'seconds': { 'coeff': 1.0,        'xlabel': 'Time (seconds)' },
 	'hours'  : { 'coeff': 3600.0,     'xlabel': 'Time (hours)'   },
@@ -35,7 +33,6 @@ COLORS = [
 	'm', 'deeppink', 'chartreuse', 'w', 'springgreen', 'peachpuff',
 	'white', 'lightpink', 'royalblue', 'lime', 'aqua' ] * 100
 
-#loads the files
 COASTLINES_COORDINATES_FILE = os.path.join(
 	os.path.dirname( os.path.realpath( __file__ ) ),
 	os.path.join( '..', '..', 'data', 'earth_data', 'coastlines.csv' )
@@ -260,7 +257,7 @@ def plot_orbits( rs, args, vectors = [] ):
 			ax.plot( rg[ :, 0 ], rg[ :, 1 ], rg[ :, 2 ], cs[ n ], zorder = 10 )
 			ax.plot( [ rg[ 0, 0 ] ], [ rg[ 0, 1 ] ], [ rg[ 0, 2 ] ], cs[ n ] + 'o', zorder = 10 )			
 
-		max_val = max( [ np.linalg.norm(_r.max(axis=1))/2, max_val ] )
+		max_val = max( [ _r.max(), max_val ] )
 		n += 1
 
 	for vector in vectors:
@@ -274,7 +271,6 @@ def plot_orbits( rs, args, vectors = [] ):
 				vector[ 'label' ],
 				color = vector[ 'color' ] )
 
-	#plots the central body sphere
 	_args[ 'cb_radius' ] *= dist_handler[ _args[ 'dist_unit' ] ]
 	_u, _v = np.mgrid[ 0:2*np.pi:20j, 0:np.pi:20j ]
 	_x     = _args[ 'cb_radius' ] * np.cos( _u ) * np.sin( _v )
@@ -282,7 +278,6 @@ def plot_orbits( rs, args, vectors = [] ):
 	_z     = _args[ 'cb_radius' ] * np.cos( _v )
 	ax.plot_surface( _x, _y, _z, cmap = _args[ 'cb_cmap' ], zorder = 1 )
 
-	#plots the sphere of influence
 	if _args[ 'cb_SOI' ] is not None:
 		_args[ 'cb_SOI' ] *= dist_handler[ _args[ 'dist_unit' ] ]
 		_x *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
@@ -292,14 +287,12 @@ def plot_orbits( rs, args, vectors = [] ):
 			color = _args[ 'cb_SOI_color' ],
 			alpha = _args[ 'cb_SOI_alpha' ] )
 
-	#plots the central body axes
 	if _args[ 'cb_axes' ]:
 		l       = _args[ 'cb_radius' ] * _args[ 'cb_axes_mag' ]
 		x, y, z = [ [ 0, 0, 0 ], [ 0, 0, 0  ], [ 0, 0, 0 ] ]
 		u, v, w = [ [ l, 0, 0 ], [ 0, l, 0 ], [ 0, 0, l ] ]
 		ax.quiver( x, y, z, u, v, w, color = _args[ 'cb_axes_color' ] )
 
-	#adds in the labels
 	xlabel = 'X (%s)' % _args[ 'dist_unit' ]
 	ylabel = 'Y (%s)' % _args[ 'dist_unit' ]
 	zlabel = 'Z (%s)' % _args[ 'dist_unit' ]
@@ -323,9 +316,9 @@ def plot_orbits( rs, args, vectors = [] ):
 					  azim = _args[ 'azimuth'   ] )
 	
 	if _args[ 'axes_no_fill' ]:
-		ax.xaxis.pane.fill = False
-		ax.yaxis.pane.fill = False
-		ax.zaxis.pane.fill = False		
+		ax.w_xaxis.pane.fill = False
+		ax.w_yaxis.pane.fill = False
+		ax.w_zaxis.pane.fill = False		
 
 	if _args[ 'hide_axes' ]:
 		ax.set_axis_off()
@@ -1056,164 +1049,3 @@ def plot_pseudopotential_contours( system, args ):
 
 	plt.close()
 
-def update(num, data, line):
-    line.set_data(data[:2, :num])
-    line.set_3d_properties(data[2, :num])
-
-def animate_orbits(rs, args, vectors = []):
-
-	_args = {
-		'figsize'      : ( 10, 8 ),
-		'labels'       : [ '' ] * len( rs ),
-		'colors'       : COLORS[ : ],
-		'traj_lws'     : 3,
-		'dist_unit'    : 'km',
-		'groundtracks' : False,
-		'cb_radius'    : 6378.0,
-		'cb_SOI'       : None,
-		'cb_SOI_color' : 'c',
-		'cb_SOI_alpha' : 0.7,
-		'cb_axes'      : True,
-		'cb_axes_mag'  : 2,
-		'cb_cmap'      : 'Blues',
-		'cb_axes_color': 'w',
-		'axes_mag'     : 0.8,
-		'axes_custom'  : None,
-		'title'        : 'Trajectories',
-		'legend'       : False,
-		'axes_no_fill' : True,
-		'hide_axes'    : False,
-		'azimuth'      : False,
-		'elevation'    : False,
-		'show'         : False,
-		'ani_name'     : 'orbit.gif',
-		'dpi'          : 100,
-		'frames'	   : 100,
-		'vector_colors': [ '' ] * len( vectors ),
-		'vector_labels': [ '' ] * len( vectors ),
-		'vector_texts' : False
-	}
-	for key in args.keys():
-		_args[ key ] = args[ key ]
-	
-	frames = _args['frames']
-
-	#generate all the frames
-	print("rendering frames")
-	for frame in range(frames):
-		max_val = 0
-		n       = 0
-
-		fig = plt.figure( figsize = _args[ 'figsize' ] )
-		ax  = fig.add_subplot( 111, projection = '3d'  )
-
-		#plots all the orbits for each spacecraft
-		for r in rs:
-			_r = r.copy() * dist_handler[ _args[ 'dist_unit' ] ]
-
-			#plots the line
-			ax.plot( _r[ :frame, 0 ], _r[ :frame, 1 ], _r[ :frame , 2 ],
-				color = _args[ 'colors' ][ n ], label = _args[ 'labels' ][ n ],
-				zorder = 10, linewidth = _args[ 'traj_lws' ] )
-
-			#plots the starting point
-			ax.plot( [ _r[ 0, 0 ] ], [ _r[ 0 , 1 ] ], [ _r[ 0, 2 ] ], 'o',
-				color = _args[ 'colors' ][ n ] )
-
-			#plots the groundtrack
-			if _args[ 'groundtracks' ]:
-				rg  = _r / np.linalg.norm( r, axis = 1 ).reshape( ( r.shape[ 0 ], 1 ) )
-				rg *= _args[ 'cb_radius' ]
-
-				ax.plot( rg[ :, 0 ], rg[ :, 1 ], rg[ :, 2 ], cs[ n ], zorder = 10 )
-				ax.plot( [ rg[ 0, 0 ] ], [ rg[ 0, 1 ] ], [ rg[ 0, 2 ] ], cs[ n ] + 'o', zorder = 10 )			
-
-			max_val = max( [ np.linalg.norm(_r.max(axis=1))/2, max_val ] )
-			n += 1
-
-		#plots the vectors
-		for vector in vectors:
-			ax.quiver( 0, 0, 0,
-				vector[ 'r' ][ 0 ], vector[ 'r' ][ 1 ], vector[ 'r' ][ 2 ],
-				color = vector[ 'color' ], label = vector[ 'label' ] )
-
-			if _args[ 'vector_texts' ]:
-				vector[ 'r' ] *= _args[ 'vector_text_scale' ]
-				ax.text( vector[ 'r' ][ 0 ], vector[ 'r' ][ 1 ], vector[ 'r' ][ 2 ],
-					vector[ 'label' ],
-					color = vector[ 'color' ] )
-
-		#plots the central body sphere
-		_args[ 'cb_radius' ] *= dist_handler[ _args[ 'dist_unit' ] ]
-		_u, _v = np.mgrid[ 0:2*np.pi:20j, 0:np.pi:20j ]
-		_x     = _args[ 'cb_radius' ] * np.cos( _u ) * np.sin( _v )
-		_y     = _args[ 'cb_radius' ] * np.sin( _u ) * np.sin( _v )
-		_z     = _args[ 'cb_radius' ] * np.cos( _v )
-		ax.plot_surface( _x, _y, _z, cmap = _args[ 'cb_cmap' ], zorder = 1 )
-
-		#plots the sphere of influence
-		if _args[ 'cb_SOI' ] is not None:
-			_args[ 'cb_SOI' ] *= dist_handler[ _args[ 'dist_unit' ] ]
-			_x *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
-			_y *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
-			_z *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
-			ax.plot_wireframe( _x, _y, _z,
-				color = _args[ 'cb_SOI_color' ],
-				alpha = _args[ 'cb_SOI_alpha' ] )
-
-		#plots the central body axes
-		if _args[ 'cb_axes' ]:
-			l       = _args[ 'cb_radius' ] * _args[ 'cb_axes_mag' ]
-			x, y, z = [ [ 0, 0, 0 ], [ 0, 0, 0  ], [ 0, 0, 0 ] ]
-			u, v, w = [ [ l, 0, 0 ], [ 0, l, 0 ], [ 0, 0, l ] ]
-			ax.quiver( x, y, z, u, v, w, color = _args[ 'cb_axes_color' ] )
-
-		#adds in the labels
-		xlabel = 'X (%s)' % _args[ 'dist_unit' ]
-		ylabel = 'Y (%s)' % _args[ 'dist_unit' ]
-		zlabel = 'Z (%s)' % _args[ 'dist_unit' ]
-
-		if _args[ 'axes_custom' ] is not None:
-			max_val = _args[ 'axes_custom' ]
-		else:
-			max_val *= _args[ 'axes_mag' ]
-
-		ax.set_xlim( [ -max_val, max_val ] )
-		ax.set_ylim( [ -max_val, max_val ] )
-		ax.set_zlim( [ -max_val, max_val ] )
-		ax.set_xlabel( xlabel )
-		ax.set_ylabel( ylabel )
-		ax.set_zlabel( zlabel )
-		ax.set_box_aspect( [ 1, 1, 1 ] )
-		ax.set_aspect( 'auto' )
-
-		if _args[ 'azimuth' ] is not False:
-			ax.view_init( elev = _args[ 'elevation' ],
-						  azim = _args[ 'azimuth'   ] )
-
-		if _args[ 'axes_no_fill' ]:
-			ax.xaxis.pane.fill = False
-			ax.yaxis.pane.fill = False
-			ax.zaxis.pane.fill = False		
-
-		if _args[ 'hide_axes' ]:
-			ax.set_axis_off()
-
-		if _args[ 'legend' ]:
-			plt.legend()
-
-		plt.savefig(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )), dpi = _args[ 'dpi' ])
-		plt.close()
-
-	# Use pillow to save all frames as an animation in a gif file
-	from PIL import Image
-
-	images = [Image.open(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' ))) for frame in range(frames)]
-	print("frames have been created")
-
-	print("rendering gif")
-	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], duration=50, loop=10)
-	#emptying the frames folder
-	for frame in range(frames):
-		os.remove(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )))
-	
