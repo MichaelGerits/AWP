@@ -18,8 +18,8 @@ import plotting_tools as pt
 # 3rd party libraries
 import numpy as np
 
-aops   = np.arange( 0, 360, 90 )
-incs   = np.arange( 0, 90,  10 )
+aops   = np.arange( 0, 360, 30 )
+inc   = 60
 coes   = [ earth[ 'radius' ] + 10000, 0.05, 0.0, 0.0, 0.0, 0.0 ]
 scs    = []
 config = {
@@ -27,19 +27,23 @@ config = {
 
 }
 
-print( len( aops ) * len( incs ))
+print( len( aops ))
 max_steps = 99999999999999999999999999999
 #TODO simulate simultaniosly to get rid of the problem
 if __name__ == '__main__':
-	for inc in incs:
-		for aop in aops:
-			coes[ 2 ] = inc
-			coes[ 5 ] = aop
-			config[ 'coes' ] = coes
-			sc = SC( config )
-			if len(sc.ets) < max_steps:
-				max_steps = len(sc.ets)
-			scs.append( sc )
+	for aop in aops:
+		coes[ 2 ] = inc
+		coes[ 5 ] = aop
+		config= {
+			'coes': coes,
+			'tspan': '1',
+			'propagate': True
+
+		}
+		sc = SC( config )
+		if len(sc.ets) < max_steps:
+			max_steps = len(sc.ets)
+		scs.append( sc )
 
 	rs = [ sc.states[ :, :3 ] for sc in scs ]
 	vs = [ sc.states[ :, 3:6 ] for sc in scs ]

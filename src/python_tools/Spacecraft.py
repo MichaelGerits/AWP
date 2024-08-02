@@ -35,6 +35,7 @@ def null_config():
 		'date0'          : '2021-04-01', #starting date
 		'et0'            : None, #ephemoris time = seconds since J2000
 		'frame'          : 'J2000',
+		'dt'			 :100,
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
@@ -252,6 +253,7 @@ class Spacecraft:
 		'''
 
 		self.ode_sol = solve_ivp(
+			t_eval		 = np.arange(self.et0, self.et0 + self.config['tspan'], self.config[ 'dt']), #desides at which timesteps the values should be stored
 			fun          = self.diffy_q, #array with vel and acc (time derivatives of state)
 			t_span       = ( self.et0, self.et0 + self.config[ 'tspan' ] ),#time span (from et0 to et0+time span)
 			y0           = self.state0, #initial state

@@ -32,7 +32,7 @@ dist_handler = {
 }
 
 COLORS = [ 
-	'm', 'deeppink', 'chartreuse', 'w', 'springgreen', 'peachpuff',
+	'w', 'm', 'deeppink', 'chartreuse', 'springgreen', 'peachpuff',
 	'white', 'lightpink', 'royalblue', 'lime', 'aqua' ] * 100
 
 #loads the files
@@ -1064,7 +1064,7 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 		'figsize'      : ( 10, 8 ),
 		'labels'       : [ '' ] * len( rs ),
 		'colors'       : COLORS[ : ],
-		'traj_lws'     : 3,
+		'traj_lws'     : 1,
 		'dist_unit'    : 'km',
 		'groundtracks' : False,
 		'cb_radius'    : 6378.0,
@@ -1106,147 +1106,152 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 	#generate all the frames
 	print("rendering frames")
 	for frame in range(frames):
-		print(f'rendering frame: {frame+1} out of {frames}...')
-		max_val = 0
-		n       = 0
-		fig = plt.figure( figsize = _args[ 'figsize' ] )
-		ax  = fig.add_subplot( 111, projection = '3d'  )
+		try:
+			print(f'rendering frame: {frame+1} out of {frames}...')
+			max_val = 0
+			n       = 0
+			fig = plt.figure( figsize = _args[ 'figsize' ] )
+			ax  = fig.add_subplot( 111, projection = '3d'  )
 
-		#plots all the orbits for each spacecraft
-		for r, v, quat in zip(rs, vs, quats):
-			_r = r.copy() * dist_handler[ _args[ 'dist_unit' ] ]
-			_v = v.copy() * dist_handler[ _args[ 'dist_unit' ] ]
-			_quat = quat.copy()
+			#plots all the orbits for each spacecraft
+			for r, v, quat in zip(rs, vs, quats):
+				_r = r.copy() * dist_handler[ _args[ 'dist_unit' ] ]
+				_v = v.copy() * dist_handler[ _args[ 'dist_unit' ] ]
+				_quat = quat.copy()
 
-			#plots the line
-			ax.plot( _r[ :frame, 0 ], _r[ :frame, 1 ], _r[ :frame , 2 ],
-				color = _args[ 'colors' ][ n ], label = _args[ 'labels' ][ n ],
-				zorder = 10, linewidth = _args[ 'traj_lws' ] )
+				#plots the line
+				ax.plot( _r[ :frame, 0 ], _r[ :frame, 1 ], _r[ :frame , 2 ],
+					color = _args[ 'colors' ][ n ], label = _args[ 'labels' ][ n ],
+					zorder = 10, linewidth = _args[ 'traj_lws' ] )
 
-			#plots the starting point
-			ax.plot( [ _r[ 0, 0 ] ], [ _r[ 0 , 1 ] ], [ _r[ 0, 2 ] ], 'o',
-				color = _args[ 'colors' ][ n ] )			
+				#plots the starting point
+				ax.plot( [ _r[ 0, 0 ] ], [ _r[ 0 , 1 ] ], [ _r[ 0, 2 ] ], 'o',
+					color = _args[ 'colors' ][ n ] )			
 
-			max_val = max( [ abs(_r).max(), max_val ] )
-			n += 1
+				max_val = max( [ abs(_r).max(), max_val ] )
+				n += 1
 
 	#--------------------------------------------------------------------------------------------------
 
-			#plotting the orbital axes
-			if _args[ 'or_axes' ]:
-				l =  max_val * 0.3
+				#plotting the orbital axes
+				if _args[ 'or_axes' ]:
+					l =  max_val * 0.3
 
-				#origin point of the SC
-				r1, r2, r3 = _r[frame, :3]
-				z_dir = _r[frame, :3]/np.linalg.norm(_r[frame, :3])
-				#correct x_axis for non-circularity by subtracting the projection on z
-				x_dir = (_v[frame, :3] - (np.dot(_v[frame, :3], z_dir)/np.dot(z_dir, z_dir))  * z_dir)/np.linalg.norm(_v[frame, :3])  
-				y_dir = -np.cross(z_dir, x_dir)
-				#x axis
-				x1, x2, x3 = x_dir * l
-				ax.quiver( r1, r2, r3, x1, x2, x3, color = 'y', lw=2, hatch='O' )
+					#origin point of the SC
+					r1, r2, r3 = _r[frame, :3]
+					z_dir = _r[frame, :3]/np.linalg.norm(_r[frame, :3])
+					#correct x_axis for non-circularity by subtracting the projection on z
+					x_dir = (_v[frame, :3] - (np.dot(_v[frame, :3], z_dir)/np.dot(z_dir, z_dir))  * z_dir)/np.linalg.norm(_v[frame, :3])  
+					y_dir = -np.cross(z_dir, x_dir)
+					#x axis
+					x1, x2, x3 = x_dir * l
+					ax.quiver( r1, r2, r3, x1, x2, x3, color = 'y', lw=2, hatch='O' )
 
-				#y axis
-				y1, y2, y3 = y_dir * l
-				ax.quiver( r1, r2, r3, y1, y2, y3, color = 'y', capstyle= 'round', lw=2, hatch='O' )
+					#y axis
+					y1, y2, y3 = y_dir * l
+					ax.quiver( r1, r2, r3, y1, y2, y3, color = 'y', capstyle= 'round', lw=2, hatch='O' )
 
-				#z-axis
-				z1, z2, z3 = -z_dir * l
-				ax.quiver( r1, r2, r3, z1, z2, z3, color = 'y', lw=2, hatch='O' )
+					#z-axis
+					z1, z2, z3 = -z_dir * l
+					ax.quiver( r1, r2, r3, z1, z2, z3, color = 'y', lw=2, hatch='O' )
 
-	#-----------------------------------------------------------------------------------------------------
+	#---	--------------------------------------------------------------------------------------------------
 
-			#plotting the local body axes
-			if _args['lb_axes']:
-				l =  max_val * 0.3
-				_q = Quaternion(q=_quat)
+				#plotting the local body axes
+				if _args['lb_axes']:
+					l =  max_val * 0.3
+					_q = Quaternion(q=_quat)
 
-				#origin point of the SC
-				r1, r2, r3 = _r[frame, :3]
-				if np.linalg.norm(_quat) == 0:
-					b1_dir = np.array([1, 0., 0.])
-					b2_dir = np.array([0., 1, 0.])
-					b3_dir = np.array([0., 0., 1])
+					#origin point of the SC
+					r1, r2, r3 = _r[frame, :3]
+					#if np.linalg.norm(_quat) == 0:
+					#	b1_dir = np.array([1, 0., 0.])
+					#	b2_dir = np.array([0., 1, 0.])
+					#	b3_dir = np.array([0., 0., 1])
 
-				else:
+					#else:
 					b1_dir = _q.rotatePoint(np.array([1, 0., 0.]))
 					b2_dir = _q.rotatePoint(np.array([0., 1, 0.]))
 					b3_dir = _q.rotatePoint(np.array([0., 0., 1]))
 
-				#b1 axis
-				b11, b12, b13 = b1_dir * l
-				ax.quiver( r1, r2, r3, b11, b12, b13, color = 'b', lw=2, hatch='O' )
+					#b1 axis
+					b11, b12, b13 = b1_dir * l
+					ax.quiver( r1, r2, r3, b11, b12, b13, color = 'b', lw=2, hatch='O' )
 
-				#b2 axis
-				b21, b22, b23 = b2_dir * l
-				ax.quiver( r1, r2, r3, b21, b22, b23, color = 'g', capstyle= 'round', lw=2, hatch='O' )
+					#b2 axis
+					b21, b22, b23 = b2_dir * l
+					ax.quiver( r1, r2, r3, b21, b22, b23, color = 'g', capstyle= 'round', lw=2, hatch='O' )
 
-				#b3 axis
-				b31, b32, b33 = b3_dir * l
-				ax.quiver( r1, r2, r3, b31, b32, b33, color = 'r', lw=2, hatch='O' )
+					#b3 axis
+					b31, b32, b33 = b3_dir * l
+					ax.quiver( r1, r2, r3, b31, b32, b33, color = 'r', lw=2, hatch='O' )
 
-		#plots the central body sphere
-		_args[ 'cb_radius' ] *= dist_handler[ _args[ 'dist_unit' ] ]
-		_u, _v = np.mgrid[ 0:2*np.pi:20j, 0:np.pi:20j ]
-		_x     = _args[ 'cb_radius' ] * np.cos( _u ) * np.sin( _v )
-		_y     = _args[ 'cb_radius' ] * np.sin( _u ) * np.sin( _v )
-		_z     = _args[ 'cb_radius' ] * np.cos( _v )
-		ax.plot_surface( _x, _y, _z, cmap = _args[ 'cb_cmap' ], zorder = 1 )
+	#---	-----------------------------------------------------------------------------------------------------------
+			#plots the central body sphere
+			_args[ 'cb_radius' ] *= dist_handler[ _args[ 'dist_unit' ] ]
+			_u, _v = np.mgrid[ 0:2*np.pi:20j, 0:np.pi:20j ]
+			_x     = _args[ 'cb_radius' ] * np.cos( _u ) * np.sin( _v )
+			_y     = _args[ 'cb_radius' ] * np.sin( _u ) * np.sin( _v )
+			_z     = _args[ 'cb_radius' ] * np.cos( _v )
+			ax.plot_surface( _x, _y, _z, cmap = _args[ 'cb_cmap' ], zorder = 1 )
 
-		#plots the sphere of influence
-		if _args[ 'cb_SOI' ] is not None:
-			_args[ 'cb_SOI' ] *= dist_handler[ _args[ 'dist_unit' ] ]
-			_x *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
-			_y *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
-			_z *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
-			ax.plot_wireframe( _x, _y, _z,
-				color = _args[ 'cb_SOI_color' ],
-				alpha = _args[ 'cb_SOI_alpha' ] )
+			#plots the sphere of influence
+			if _args[ 'cb_SOI' ] is not None:
+				_args[ 'cb_SOI' ] *= dist_handler[ _args[ 'dist_unit' ] ]
+				_x *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
+				_y *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
+				_z *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
+				ax.plot_wireframe( _x, _y, _z,
+					color = _args[ 'cb_SOI_color' ],
+					alpha = _args[ 'cb_SOI_alpha' ] )
 
-		#plots the central body axes
-		if _args[ 'cb_axes' ]:
-			l       = _args[ 'cb_radius' ] * _args[ 'cb_axes_mag' ]
-			x, y, z = [ [ 0, 0, 0 ], [ 0, 0, 0  ], [ 0, 0, 0 ] ]
-			u, v, w = [ [ l, 0, 0 ], [ 0, l, 0 ], [ 0, 0, l ] ]
-			ax.quiver( x, y, z, u, v, w, color = _args[ 'cb_axes_color' ] )
+			#plots the central body axes
+			if _args[ 'cb_axes' ]:
+				l       = _args[ 'cb_radius' ] * _args[ 'cb_axes_mag' ]
+				x, y, z = [ [ 0, 0, 0 ], [ 0, 0, 0  ], [ 0, 0, 0 ] ]
+				u, v, w = [ [ l, 0, 0 ], [ 0, l, 0 ], [ 0, 0, l ] ]
+				ax.quiver( x, y, z, u, v, w, color = _args[ 'cb_axes_color' ] )
 
-		#adds in the labels
-		xlabel = 'X (%s)' % _args[ 'dist_unit' ]
-		ylabel = 'Y (%s)' % _args[ 'dist_unit' ]
-		zlabel = 'Z (%s)' % _args[ 'dist_unit' ]
+			#adds in the labels
+			xlabel = 'X (%s)' % _args[ 'dist_unit' ]
+			ylabel = 'Y (%s)' % _args[ 'dist_unit' ]
+			zlabel = 'Z (%s)' % _args[ 'dist_unit' ]
 
-		if _args[ 'axes_custom' ] is not None:
-			max_val = _args[ 'axes_custom' ]
-		else:
-			max_val *= _args[ 'axes_mag' ]
+			if _args[ 'axes_custom' ] is not None:
+				max_val = _args[ 'axes_custom' ]
+			else:
+				max_val *= _args[ 'axes_mag' ]
 
-		ax.set_xlim( [ -max_val, max_val ] )
-		ax.set_ylim( [ -max_val, max_val ] )
-		ax.set_zlim( [ -max_val, max_val ] )
-		ax.set_xlabel( xlabel )
-		ax.set_ylabel( ylabel )
-		ax.set_zlabel( zlabel )
-		ax.set_box_aspect( [ 1, 1, 1 ] )
-		ax.set_aspect( 'auto' )
+			ax.set_xlim( [ -max_val, max_val ] )
+			ax.set_ylim( [ -max_val, max_val ] )
+			ax.set_zlim( [ -max_val, max_val ] )
+			ax.set_xlabel( xlabel )
+			ax.set_ylabel( ylabel )
+			ax.set_zlabel( zlabel )
+			ax.set_box_aspect( [ 1, 1, 1 ] )
+			ax.set_aspect( 'auto' )
 
-		if _args[ 'azimuth' ] is not False:
-			ax.view_init( elev = _args[ 'elevation' ],
-						  azim = _args[ 'azimuth'   ] )
+			if _args[ 'azimuth' ] is not False:
+				ax.view_init( elev = _args[ 'elevation' ],
+							  azim = _args[ 'azimuth'   ] )
 
-		if _args[ 'axes_no_fill' ]:
-			ax.xaxis.pane.fill = False
-			ax.yaxis.pane.fill = False
-			ax.zaxis.pane.fill = False		
+			if _args[ 'axes_no_fill' ]:
+				ax.xaxis.pane.fill = False
+				ax.yaxis.pane.fill = False
+				ax.zaxis.pane.fill = False		
 
-		if _args[ 'hide_axes' ]:
-			ax.set_axis_off()
+			if _args[ 'hide_axes' ]:
+				ax.set_axis_off()
 
-		if _args[ 'legend' ]:
-			plt.legend()
+			if _args[ 'legend' ]:
+				plt.legend()
 
-		plt.savefig(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )), dpi = _args[ 'dpi' ])
-		plt.close()
-
+			plt.savefig(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )), dpi = _args[ 'dpi' ])
+			plt.close()
+		except KeyboardInterrupt:
+			frames = frame
+			break
+			
 	# Use pillow to save all frames as an animation in a gif file
 	from PIL import Image
 
@@ -1254,7 +1259,7 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 	print("frames have been created")
 
 	print("rendering gif...")
-	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], duration=frames/2, loop=10)
+	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], duration=frames/2.5, loop=10)
 	#emptying the frames folder
 	for frame in range(frames):
 		os.remove(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )))

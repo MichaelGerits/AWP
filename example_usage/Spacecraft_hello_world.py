@@ -21,9 +21,9 @@ from planetary_data import earth
 if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , raan(deg), aop(deg), ta]
 	
-	#coes = [ earth[ 'radius' ] + 25000, 0.1, 30.0, 0.0, 0.0, 0.0 ]
-	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 1.97013154, np.cos(np.pi/2), 0., 0., np.sin(np.pi/2), 0.]
-	coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ]
+	coes = [ earth[ 'radius' ] + 25000, 0.1, 75.0, 0.0, 0.0, 0.0 ]
+	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 1.97013154, np.cos(np.pi/3), 0., 0., np.sin(np.pi/3), 0.]
+	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ]
 	sc   = SC(
 			{
 			'coes'       : coes,
@@ -31,6 +31,7 @@ if __name__ == '__main__':
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
 			'tspan'      : '1', 
+			'dt' : 100,
 			'orbit_perts': { 'J2': True }
 			} )
-	sc.plot_3d(ani = True,  args = { 'show': False, 'ani_name': 'orbit.gif', 'frames': None})
+	sc.plot_3d(ani = False,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None})
