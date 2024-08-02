@@ -15,7 +15,6 @@ plt.style.use( 'dark_background' )
 
 import cities_lat_long
 
-#adds conversion rates fro diffrent units
 time_handler = {
 	'seconds': { 'coeff': 1.0,        'xlabel': 'Time (seconds)' },
 	'hours'  : { 'coeff': 3600.0,     'xlabel': 'Time (hours)'   },
@@ -35,7 +34,6 @@ COLORS = [
 	'w', 'm', 'deeppink', 'chartreuse', 'springgreen', 'peachpuff',
 	'white', 'lightpink', 'royalblue', 'lime', 'aqua' ] * 100
 
-#loads the files
 COASTLINES_COORDINATES_FILE = os.path.join(
 	os.path.dirname( os.path.realpath( __file__ ) ),
 	os.path.join( '..', '..', 'data', 'earth_data', 'coastlines.csv' )
@@ -276,7 +274,6 @@ def plot_orbits( rs, args, vectors = [] ):
 				vector[ 'label' ],
 				color = vector[ 'color' ] )
 
-	#plots the central body sphere
 	_args[ 'cb_radius' ] *= dist_handler[ _args[ 'dist_unit' ] ]
 	_u, _v = np.mgrid[ 0:2*np.pi:20j, 0:np.pi:20j ]
 	_x     = _args[ 'cb_radius' ] * np.cos( _u ) * np.sin( _v )
@@ -284,7 +281,6 @@ def plot_orbits( rs, args, vectors = [] ):
 	_z     = _args[ 'cb_radius' ] * np.cos( _v )
 	ax.plot_surface( _x, _y, _z, cmap = _args[ 'cb_cmap' ], zorder = 1 )
 
-	#plots the sphere of influence
 	if _args[ 'cb_SOI' ] is not None:
 		_args[ 'cb_SOI' ] *= dist_handler[ _args[ 'dist_unit' ] ]
 		_x *= _args[ 'cb_SOI' ] / _args[ 'cb_radius' ]
@@ -301,7 +297,6 @@ def plot_orbits( rs, args, vectors = [] ):
 		u, v, w = [ [ l, 0, 0 ], [ 0, l, 0 ], [ 0, 0, l ] ]
 		ax.quiver( x, y, z, u, v, w, color = _args[ 'cb_axes_color' ] )
 
-	#adds in the labels
 	xlabel = 'X (%s)' % _args[ 'dist_unit' ]
 	ylabel = 'Y (%s)' % _args[ 'dist_unit' ]
 	zlabel = 'Z (%s)' % _args[ 'dist_unit' ]
@@ -325,9 +320,9 @@ def plot_orbits( rs, args, vectors = [] ):
 					  azim = _args[ 'azimuth'   ] )
 	
 	if _args[ 'axes_no_fill' ]:
-		ax.xaxis.pane.fill = False
-		ax.yaxis.pane.fill = False
-		ax.zaxis.pane.fill = False		
+		ax.w_xaxis.pane.fill = False
+		ax.w_yaxis.pane.fill = False
+		ax.w_zaxis.pane.fill = False		
 
 	if _args[ 'hide_axes' ]:
 		ax.set_axis_off()
