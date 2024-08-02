@@ -23,6 +23,7 @@ import numerical_tools    as nt
 import plotting_tools     as pt
 import planetary_data     as pd
 import spice_data         as sd
+from tinyQuaternion import Quaternion
 
 def null_config():
 	return {
@@ -32,6 +33,7 @@ def null_config():
 		'frame'          : 'J2000',
 		'dt'			 : 100,
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
+		'actuators'		 : [], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
 		'propagator'     : 'LSODA', #defines which ODE solver is used
@@ -41,6 +43,9 @@ def null_config():
 		'print_stop'     : True,
 		'dense_output'   : False,
 		'mass0'          : 0,
+		'inertia0'		 : np.array([[0., 0., 0.],
+						   			 [0., 0., 0.], 
+									 [0., 0., 0.],]),
 		'output_dir'     : '.',
 		'propagate'      : True
 	}
@@ -59,13 +64,15 @@ class Spacecraft:
 			# 'oc' is for the orbit calculations lib
 			self.config[ 'orbit_state' ] = oc.coes2state( self.config[ 'coes' ], mu = self.config[ 'cb' ][ 'mu' ] )
 			#adds 0 rotation quaternion to the orbital state
-			self.config[ 'orbit_state' ] = np.append(self.config['orbit_state'], np.zeros(7))
+			self.config[ 'orbit_state' ] = np.append(self.config['orbit_state'], [np.cos(0), 0., 0., 0., 0., 0., 0.])
 
 		#convert the optional amount of orbits to amount of seconds to simulate
 		if type( self.config[ 'tspan' ] ) == str:
 			self.config[ 'tspan' ] = float( self.config[ 'tspan'] ) *\
 				oc.state2period( self.config[ 'orbit_state' ], self.cb[ 'mu' ] )
 
+		if len(self.config['actuators']) != 0:
+			self.actuators = config['actuators']
 		#allocates memory for the initial orbital state
 		self.state0 = np.zeros( 14 )
 		#adds initial pos (3d) and vel (3d) + a 4d quaternoin + 3d angular rate
@@ -197,15 +204,27 @@ class Spacecraft:
 		v         = np.array( [ vx, vy, vz ] )
 		q 		  = np.array( [q0, q1,q2, q3] )
 		w 		  = np.array( [w1, w2, w3] ) #BODY AXIS rotational rate
+		Force		  = np.array( self.config['actuators'][:3]) #body axis force (applied)
+		Torque		  = np.array( self.config['actuators'][3:]) #body axis torque (applied)
+
+		inertiaTens = self.config['inertia0']
+
+		#adjusting torque and internal force to the body axis
+		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
+		a_b = Force/mass
+		a_g = _q.rotatePoint(a_b)
+		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
+		alpha_g = _q.rotatePoint(alpha_b) 
+
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
 		et       += self.et0
 
-		#TODO: add angular accelerations + petrubutions
-		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3
+		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g
 
 		for pert in self.orbit_perts_funcs:
 			a += pert( et, state )
+			#TODO: add torque effect for pertubutions
 
 		#the angular rate matrix to get the dot of the position quaternion
 		w_matrix = np.array([[0, w1, w2, w3],
@@ -216,7 +235,7 @@ class Spacecraft:
 		state_dot[ :3  ] = v #r dot
 		state_dot[ 3:6 ] = a #v dot
 		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(np.transpose(q), w_matrix)) #q dot
-		state_dot[ 10:13 ] = np.zeros(3) #omega dot #TODO change this to be the angular acceleration
+		state_dot[ 10:13 ] = alpha_g - np.cross(np.transpose(w), np.matmul(inertiaTens, np.transpose(w))) #consider rotational dynamics
 		state_dot[ 13 ] = mass_dot
 		return state_dot
 

@@ -1054,7 +1054,9 @@ def plot_pseudopotential_contours( system, args ):
 	plt.close()
 
 def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
-
+	'''
+	animates the trajectory of the orbits. rs, vs, and quats are lists of the state solutions of all scs
+	'''
 	_args = {
 		'figsize'      : ( 10, 8 ),
 		'labels'       : [ '' ] * len( rs ),

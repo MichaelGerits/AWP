@@ -17,9 +17,9 @@ import plotting_tools as pt
 # 3rd party libraries
 import numpy as np
 
-aops   = np.arange( 0, 360, 30 )
+aops   = np.arange( 0, 360, 20 )
 inc   = 60
-coes   = [ earth[ 'radius' ] + 10000, 0.05, 0.0, 0.0, 0.0, 0.0 ]
+coes   = [ earth[ 'radius' ] + 11000, 0.0, 0.0, 0.0, 0.0, 0.0 ]
 scs    = []
 config = {
 	'tspan': '1',
@@ -27,7 +27,7 @@ config = {
 }
 
 print( len( aops ))
-max_steps = 99999999999999999999999999999
+max_steps = 1e10
 #TODO simulate simultaniosly to get rid of the problem
 if __name__ == '__main__':
 	for aop in aops:
@@ -48,4 +48,4 @@ if __name__ == '__main__':
 	vs = [ sc.states[ :, 3:6 ] for sc in scs ]
 	quats = [ sc.states[ :, 6:10 ] for sc in scs ]
 	#shape = (sc_amount, amount of simulated points, amount oflogged values)
-	pt.animate_orbits( max_steps, rs, vs, quats, args = { 'show': True, 'ani_name': 'mult_orbit.gif', 'lb_axes': False })
+	pt.animate_orbits( max_steps, rs, vs, quats, args = { 'show': False, 'ani_name': 'mult_orbit.gif', 'lb_axes': True })
