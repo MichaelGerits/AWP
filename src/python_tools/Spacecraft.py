@@ -25,45 +25,59 @@ import planetary_data     as pd
 import spice_data         as sd
 
 def null_config():
+	'''
+	Framework to define a spacecraft in it's orbit as a point mass
+	Defines the default values, can be changed when initialising the object
+	'''
 	return {
-		'cb'             : pd.earth,
-		'date0'          : '2021-04-01',
-		'et0'            : None,
+		#the central body
+		'cb'             : pd.earth, #choose the standard central body
+		'date0'          : '2021-04-01', #starting date
+		'et0'            : None, #ephemoris time = seconds since J2000
 		'frame'          : 'J2000',
-		'orbit_state'    : [],
-		'coes'           : [],
-		'orbit_perts'    : {},
-		'propagator'     : 'LSODA',
-		'atol'           : 1e-6,
-		'rtol'           : 1e-6,
-		'stop_conditions': {},
+		'orbit_state'    : [], 	#orbit defined by position and velocity vector
+		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
+		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
+		'propagator'     : 'LSODA', #defines which ODE solver is used
+		'atol'           : 1e-6, #absolute max error
+		'rtol'           : 1e-6, #relative max error
+		'stop_conditions': {}, #list of condistions to stop propagations
 		'print_stop'     : True,
 		'dense_output'   : False,
-		'mass0'          : 0,
+		'mass0'          : 0, #starting mass
 		'output_dir'     : '.',
-		'propagate'      : True
+		'propagate'      : True # simulate when called
 	}
 
 class Spacecraft:
-
+	'''
+	encompasses the entire orbiting body and houses/collects all necessary data to integrate the orbit
+	'''
 	def __init__( self, config ):
+		#set the default values for the orbit
 		self.config = null_config()
+		#overwrite default with specified values
 		for key in config.keys():
 			self.config[ key ] = config[ key ]
 
 		self.orbit_perts = self.config[ 'orbit_perts' ]
 		self.cb          = self.config[ 'cb' ]
 
+		#if coes are passed in they are converted to an orbital state
 		if self.config[ 'coes' ]:
+			# 'oc' is for the orbit calculations lib
 			self.config[ 'orbit_state' ] = oc.coes2state( self.config[ 'coes' ],
 				mu = self.config[ 'cb' ][ 'mu' ] )
-
+		#convert the optional amount of orbits to amount of seconds to simulate
 		if type( self.config[ 'tspan' ] ) == str:
 			self.config[ 'tspan' ] = float( self.config[ 'tspan'] ) *\
 				oc.state2period( self.config[ 'orbit_state' ], self.cb[ 'mu' ] )
 
+		#allocates memory for the initial orbital state
 		self.state0       = np.zeros( 7 )
+		#adds initial pos (3d) and vel (3d)
 		self.state0[ :6 ] = self.config[ 'orbit_state' ]
+		#adds the initial mass
 		self.state0[  6 ] = self.config[ 'mass0' ]
 
 		self.coes_calculated      = False
@@ -92,14 +106,15 @@ class Spacecraft:
 		Negative    --> positive to negative 0 crossing
 		0 (default) --> both
 		'''
-
-		self.check_min_alt.__func__.direction   = -1
-		self.check_max_alt.__func__.direction   =  1
+		
+		self.check_min_alt.__func__.direction   = -1 #value crosses zero downward
+		self.check_max_alt.__func__.direction   =  1 #value crosses zero upwards
 		self.check_enter_SOI.__func__.direction = -1
 
 		self.check_min_alt.__func__.terminal = True
 		self.stop_condition_functions        = [ self.check_min_alt ]
 
+		#sets min alt if none is defined
 		if 'min_alt' not in self.config[ 'stop_conditions' ].keys():
 			self.config[ 'stop_conditions' ][ 'min_alt' ] =\
 				self.cb[ 'deorbit_altitude' ]
@@ -109,34 +124,45 @@ class Spacecraft:
 			'max_alt'  : self.check_max_alt,
 			'enter_SOI': self.check_enter_SOI
 			}
-
+		#adds the requested stop conditions to a lis to check
 		for key in self.config[ 'stop_conditions' ].keys():
 			method                   = self.stop_conditions_map[ key ]
 			method.__func__.terminal = True
 			self.stop_condition_functions.append( method )
 
 	def assign_orbit_perturbations_functions( self ):
-	
+		'''
+		a collection of the possible petrubations
+		'''
 		self.orbit_perts_funcs_map = {
 			'J2'      : self.calc_J2,
 			'n_bodies': self.calc_n_bodies
 		}
 		self.orbit_perts_funcs = []
-
+		#adds the requested petrubations to be calculated
 		for key in self.config[ 'orbit_perts' ]:
 			self.orbit_perts_funcs.append( 
 				self.orbit_perts_funcs_map[ key ] )
 
 	def load_spice_kernels( self ):
+		'''
+		adds kernels from the database
+		'''
 		spice.furnsh( sd.leapseconds_kernel )
 		self.spice_kernels_loaded = [ sd.leapseconds_kernel ]
 
+		#initialises the ephemeris time
 		if self.config[ 'et0' ] is not None:
 			self.et0 = self.config[ 'et0' ]
 		else:
+			#converts the date to ephemeris time
 			self.et0 = spice.str2et( self.config[ 'date0' ] )
 
 	def check_min_alt( self, et, state ):
+		'''
+		checks if the current altitude is below the minimum.
+		Negative when below
+		'''
 		return nt.norm( state[ :3 ] ) -\
 			      self.cb[ 'radius' ] -\
 			      self.config[ 'stop_conditions' ][ 'min_alt' ]
@@ -147,6 +173,9 @@ class Spacecraft:
 			      self.config[ 'stop_conditions' ][ 'max_alt' ]
 
 	def check_enter_SOI( self, et, state ):
+		'''
+		checks if the body has enterd the sphere of influence
+		'''
 		body      = self.config[ 'stop_conditions' ][ 'enter_SOI' ]
 		r_cb2body = spice.spkgps( body[ 'SPICE_ID' ], et,
 						self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ]
@@ -158,6 +187,9 @@ class Spacecraft:
 		print( f'Spacecraft has reached {parameter}.' )
 
 	def calc_n_bodies( self, et, state ):
+		'''
+		calculates n-bodies pertubations at a certain state
+		'''
 		a = np.zeros( 3 )
 		for body in self.config[ 'orbit_perts' ][ 'n_bodies' ]:
 			r_cb2body  = spice.spkgps( body[ 'SPICE_ID' ], et,
@@ -170,6 +202,7 @@ class Spacecraft:
 		return a
 
 	def calc_J2( self, et, state ):
+		'''calculates the J2 pertubation at a certain state'''
 		z2     = state[ 2 ] ** 2
 		norm_r = nt.norm( state[ :3 ] )
 		r2     = norm_r ** 2
@@ -181,38 +214,49 @@ class Spacecraft:
 			 / r2 ** 2 * np.array( [ tx, ty, tz ] )
 
 	def diffy_q( self, et, state ):
+		'''
+		initialises the original states and "derives" it for the ODE
+		'''
 		rx, ry, rz, vx, vy, vz, mass = state
 		r         = np.array( [ rx, ry, rz ] )
-		mass_dot  = 0.0
+		v         = np.array( [ vx, vy, vz ] )
+		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 7 )
 		et       += self.et0
 
+		#gravitational acc
 		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3
 
+		#petrubations
 		for pert in self.orbit_perts_funcs:
 			a += pert( et, state )
 
-		state_dot[ :3  ] = [ vx, vy, vz ]
+		#getting intermediary equation since this is a second order ODE
+		state_dot[ :3  ] = v
 		state_dot[ 3:6 ] = a
 		state_dot[ 6   ] = mass_dot
 		return state_dot
 
 	def propagate_orbit( self ):
 		print( 'Propagating orbit..' )
+		'''
+		uses scipy to integrate and save the states.
+		Time steps are calculated automatically based on the solver used
+		'''
 
 		self.ode_sol = solve_ivp(
-			fun          = self.diffy_q,
-			t_span       = ( self.et0, self.et0 + self.config[ 'tspan' ] ),
-			y0           = self.state0,
-			method       = self.config[ 'propagator' ],
-			events       = self.stop_condition_functions,
-			rtol         = self.config[ 'rtol' ],
-			atol         = self.config[ 'atol' ],
+			fun          = self.diffy_q, #array with vel and acc (time derivatives of state)
+			t_span       = ( self.et0, self.et0 + self.config[ 'tspan' ] ),#time span (from et0 to et0+time span)
+			y0           = self.state0, #initial state
+			method       = self.config[ 'propagator' ], #what ODE solver is used
+			events       = self.stop_condition_functions, #stopping conditions
+			rtol         = self.config[ 'rtol' ], #relative accuracy lim
+			atol         = self.config[ 'atol' ], #absolute accuracy lim
 			dense_output = self.config[ 'dense_output' ] )
 
-		self.states  = self.ode_sol.y.T
-		self.ets     = self.ode_sol.t
-		self.n_steps = self.states.shape[ 0 ]
+		self.states  = self.ode_sol.y.T #array of states
+		self.ets     = self.ode_sol.t #time steps
+		self.n_steps = self.states.shape[ 0 ] #number of steps
 
 	def calc_altitudes( self ):
 		self.altitudes = np.linalg.norm( self.states[ :, :3 ], axis = 1 ) -\
@@ -220,6 +264,9 @@ class Spacecraft:
 		self.altitudes_calculated = True
 
 	def calc_coes( self ):
+		'''
+		calculates the coefficients of the orbit
+		'''
 		print( 'Calculating COEs..' )
 		self.coes = np.zeros( ( self.n_steps, 6 ) )
 
@@ -231,6 +278,9 @@ class Spacecraft:
 		self.coes_calculated = True
 
 	def calc_apoapses_periapses( self ):
+		'''
+		calculates the apo and peri of the orbit
+		'''
 		if not self.coes_calculated:
 			self.calc_coes()
 
@@ -240,6 +290,9 @@ class Spacecraft:
 		self.ra_rp_calculated = True
 
 	def calc_latlons( self ):
+		'''
+		calculates the lations if they aren't yet
+		'''
 		self.latlons = nt.cart2lat( self.states[ :, :3 ],
 			self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], self.ets )
 		self.latlons_calculated = True
@@ -258,7 +311,9 @@ class Spacecraft:
 
 		pt.plot_eclipse_array( self.ets, self.eclipse_array, args )
 
-	def plot_3d( self, args = { 'show': True } ):
+	def plot_3d( self, ani= True, args = { 'show': True, 'ani_name': 'orbit.gif', 'traj_lws': 2} ):
+		if ani == True:
+			pt.animate_orbits( [ self.states[ :, :3 ] ], args )
 		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
 
 	def plot_groundtracks( self, args = { 'show': True } ):
@@ -268,6 +323,7 @@ class Spacecraft:
 		pt.plot_groundtracks( [ self.latlons ], args )
 
 	def plot_coes( self, args = { 'show': True }, step = 1 ):
+		#step is how many points are PLOTTED
 		if not self.coes_calculated:
 			self.calc_coes()
 
