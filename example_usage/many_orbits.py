@@ -8,8 +8,7 @@ Many orbits script
 
 # Python standard libraries
 from sys import path
-path.append( '../src/python_tools' )
-
+path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
 # AWP libraries
 from Spacecraft import Spacecraft as SC
 from planetary_data import earth
@@ -41,8 +40,8 @@ if __name__ == '__main__':
 
 		}
 		sc = SC( config )
-		if len(sc.ets) < max_steps:
-			max_steps = len(sc.ets)
+		if sc.n_steps < max_steps:
+			max_steps = sc.n_steps
 		scs.append( sc )
 
 	rs = [ sc.states[ :, :3 ] for sc in scs ]

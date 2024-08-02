@@ -22,16 +22,16 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , raan(deg), aop(deg), ta]
 	
 	coes = [ earth[ 'radius' ] + 25000, 0.1, 75.0, 0.0, 0.0, 0.0 ]
-	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 1.97013154, np.cos(np.pi/3), 0., 0., np.sin(np.pi/3), 0.]
-	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ]
+	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 1.97013154, np.cos(0), 0., 0., 0., 0., 0., 2*np.pi/55316.5383981744, 0.]
+	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ] #Molniya
 	sc   = SC(
 			{
-			'coes'       : coes,
-			#'orbit_state': state,
+			#'coes'       : coes,
+			'orbit_state': state,
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
 			'tspan'      : '1', 
-			'dt' : 100,
+			'dt' : 500,
 			'orbit_perts': { 'J2': True }
 			} )
-	sc.plot_3d(ani = False,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None})
+	sc.plot_3d(ani = True,  args = { 'show': False, 'ani_name': 'orbit.gif', 'frames': 200})

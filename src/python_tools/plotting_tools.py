@@ -31,7 +31,7 @@ dist_handler = {
 }
 
 COLORS = [ 
-	'w', 'm', 'deeppink', 'chartreuse', 'springgreen', 'peachpuff',
+	'peachpuff', 'w', 'm', 'deeppink', 'chartreuse', 'springgreen',
 	'white', 'lightpink', 'royalblue', 'lime', 'aqua' ] * 100
 
 COASTLINES_COORDINATES_FILE = os.path.join(
@@ -320,9 +320,9 @@ def plot_orbits( rs, args, vectors = [] ):
 					  azim = _args[ 'azimuth'   ] )
 	
 	if _args[ 'axes_no_fill' ]:
-		ax.w_xaxis.pane.fill = False
-		ax.w_yaxis.pane.fill = False
-		ax.w_zaxis.pane.fill = False		
+		ax.xaxis.pane.fill = False
+		ax.yaxis.pane.fill = False
+		ax.zaxis.pane.fill = False		
 
 	if _args[ 'hide_axes' ]:
 		ax.set_axis_off()
@@ -1088,6 +1088,7 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 		'vector_labels': [ '' ] * len( vectors ),
 		'vector_texts' : False
 	}
+	
 
 	for key in args.keys():
 		_args[ key ] = args[ key ]
@@ -1108,11 +1109,13 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 			fig = plt.figure( figsize = _args[ 'figsize' ] )
 			ax  = fig.add_subplot( 111, projection = '3d'  )
 
-			#plots all the orbits for each spacecraft
-			for r, v, quat in zip(rs, vs, quats):
+			#pitterates over each SC
+			for (r, v, quat) in zip(rs, vs, quats):
 				_r = r.copy() * dist_handler[ _args[ 'dist_unit' ] ]
-				_v = v.copy() * dist_handler[ _args[ 'dist_unit' ] ]
-				_quat = quat.copy()
+
+				#for both v and quat, only the latest value is needed, r needs the history to draw the line
+				_v = v.copy()[frame] * dist_handler[ _args[ 'dist_unit' ] ]
+				_quat = quat.copy()[frame]
 
 				#plots the line
 				ax.plot( _r[ :frame, 0 ], _r[ :frame, 1 ], _r[ :frame , 2 ],
@@ -1136,7 +1139,7 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 					r1, r2, r3 = _r[frame, :3]
 					z_dir = _r[frame, :3]/np.linalg.norm(_r[frame, :3])
 					#correct x_axis for non-circularity by subtracting the projection on z
-					x_dir = (_v[frame, :3] - (np.dot(_v[frame, :3], z_dir)/np.dot(z_dir, z_dir))  * z_dir)/np.linalg.norm(_v[frame, :3])  
+					x_dir = (_v[:3] - (np.dot(_v[:3], z_dir)/np.dot(z_dir, z_dir))  * z_dir)/np.linalg.norm(_v[:3])  
 					y_dir = -np.cross(z_dir, x_dir)
 					#x axis
 					x1, x2, x3 = x_dir * l
@@ -1159,15 +1162,15 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 
 					#origin point of the SC
 					r1, r2, r3 = _r[frame, :3]
-					#if np.linalg.norm(_quat) == 0:
-					#	b1_dir = np.array([1, 0., 0.])
-					#	b2_dir = np.array([0., 1, 0.])
-					#	b3_dir = np.array([0., 0., 1])
+					if np.linalg.norm(_quat) == 0:
+						b1_dir = np.array([1, 0., 0.])
+						b2_dir = np.array([0., 1, 0.])
+						b3_dir = np.array([0., 0., 1])
 
-					#else:
-					b1_dir = _q.rotatePoint(np.array([1, 0., 0.]))
-					b2_dir = _q.rotatePoint(np.array([0., 1, 0.]))
-					b3_dir = _q.rotatePoint(np.array([0., 0., 1]))
+					else:
+						b1_dir = _q.rotatePoint(np.array([1, 0., 0.]))
+						b2_dir = _q.rotatePoint(np.array([0., 1, 0.]))
+						b3_dir = _q.rotatePoint(np.array([0., 0., 1]))
 
 					#b1 axis
 					b11, b12, b13 = b1_dir * l

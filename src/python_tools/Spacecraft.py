@@ -30,7 +30,7 @@ def null_config():
 		'date0'          : '2021-04-01',
 		'et0'            : None,
 		'frame'          : 'J2000',
-		'dt'			 :100,
+		'dt'			 : 100,
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
@@ -59,7 +59,7 @@ class Spacecraft:
 			# 'oc' is for the orbit calculations lib
 			self.config[ 'orbit_state' ] = oc.coes2state( self.config[ 'coes' ], mu = self.config[ 'cb' ][ 'mu' ] )
 			#adds 0 rotation quaternion to the orbital state
-			self.config[ 'orbit_state' ] = np.append(self.config['orbit_state'], np.zeros(4))
+			self.config[ 'orbit_state' ] = np.append(self.config['orbit_state'], np.zeros(7))
 
 		#convert the optional amount of orbits to amount of seconds to simulate
 		if type( self.config[ 'tspan' ] ) == str:
@@ -67,14 +67,12 @@ class Spacecraft:
 				oc.state2period( self.config[ 'orbit_state' ], self.cb[ 'mu' ] )
 
 		#allocates memory for the initial orbital state
-		self.state0 = np.zeros( 11 )
-		#adds initial pos (3d) and vel (3d) + a 4d quaternoin
-		self.state0[ :10 ] = self.config[ 'orbit_state' ][ :10 ]
+		self.state0 = np.zeros( 14 )
+		#adds initial pos (3d) and vel (3d) + a 4d quaternoin + 3d angular rate
+		self.state0[ :13 ] = self.config[ 'orbit_state' ][ :13 ]
 		
-		#TODO: add angular momentum
-
 		#adds the initial mass
-		self.state0[  10 ] = self.config[ 'mass0' ]
+		self.state0[ 13 ] = self.config[ 'mass0' ]
 
 		self.coes_calculated      = False
 		self.latlons_calculated   = False
@@ -194,23 +192,32 @@ class Spacecraft:
 		'''
 		initialises the original states and "derives" it for the ODE
 		'''
-		rx, ry, rz, vx, vy, vz, q0, q1, q2, q3, mass = state
+		rx, ry, rz, vx, vy, vz, q0, q1, q2, q3, w1, w2, w3, mass = state
 		r         = np.array( [ rx, ry, rz ] )
 		v         = np.array( [ vx, vy, vz ] )
 		q 		  = np.array( [q0, q1,q2, q3] )
+		w 		  = np.array( [w1, w2, w3] ) #BODY AXIS rotational rate
 		mass_dot  = 0.0 #time derivative of the mass
-		state_dot = np.zeros( 11 ) #TODO add angular momentum
+		state_dot = np.zeros( 14 )
 		et       += self.et0
 
+		#TODO: add angular accelerations + petrubutions
 		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3
 
 		for pert in self.orbit_perts_funcs:
 			a += pert( et, state )
 
-		state_dot[ :3  ] = [ vx, vy, vz ]
-		state_dot[ 3:6 ] = a
-		state_dot[6:10] = np.zeros(4) #TODO edit this to be the dot
-		state_dot[ 10 ] = mass_dot
+		#the angular rate matrix to get the dot of the position quaternion
+		w_matrix = np.array([[0, w1, w2, w3],
+					   		 [-w1, 0, -w3, w2],
+							 [-w2, w3, 0, -w1],
+							 [-w3, -w2, w1, 0]])
+
+		state_dot[ :3  ] = v #r dot
+		state_dot[ 3:6 ] = a #v dot
+		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(np.transpose(q), w_matrix)) #q dot
+		state_dot[ 10:13 ] = np.zeros(3) #omega dot #TODO change this to be the angular acceleration
+		state_dot[ 13 ] = mass_dot
 		return state_dot
 
 	def propagate_orbit( self ):
@@ -277,7 +284,7 @@ class Spacecraft:
 
 	def plot_3d( self, args, ani= True):
 		if ani == True:
-			pt.animate_orbits( len(self.ets),[ self.states[ :, :3 ] ],[self.states[:, 3:6]], self.states[:, 6:10], args )
+			pt.animate_orbits( self.n_steps,[ self.states[ :, :3 ] ],[self.states[:, 3:6]], [ self.states[:, 6:10] ], args )
 		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
 
 	def plot_groundtracks( self, args = { 'show': True } ):
