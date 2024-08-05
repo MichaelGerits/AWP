@@ -35,8 +35,17 @@ if __name__ == '__main__':
 		coes[ 5 ] = aop
 		config= {
 			'coes': coes,
-			'tspan': '1',
-			'propagate': True
+			'actuators'	 : [0., 0., 1e-3, 0.1e-6, 0.1e-6, -0.5e-6], #these arethe forces and torques that act with respect to the body axis
+			'mass0'		 : 100.,
+			'inertia0'	 : np.array([[100., 0., 0.],
+						   			 [0., 100., 0.], 
+									 [0., 0., 100.],]),
+			#Tspan is either the amount or seconds. 
+			#If it is a string,it is the amount of orbits
+			'tspan'      : '2', 
+			#this decides at which points the integrator stores points to be plotted
+			'dt' : 100,
+			'orbit_perts': { 'J2': True },
 
 		}
 		sc = SC( config )
@@ -48,4 +57,4 @@ if __name__ == '__main__':
 	vs = [ sc.states[ :, 3:6 ] for sc in scs ]
 	quats = [ sc.states[ :, 6:10 ] for sc in scs ]
 	#shape = (sc_amount, amount of simulated points, amount oflogged values)
-	pt.animate_orbits( max_steps, rs, vs, quats, args = { 'show': False, 'ani_name': 'mult_orbit.gif', 'lb_axes': False })
+	pt.animate_orbits( max_steps, rs, vs, quats, args = { 'show': False, 'ani_name': 'mult_orbit.gif', 'lb_axes': True, 'or_axes': False })

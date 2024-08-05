@@ -31,7 +31,7 @@ def null_config():
 		'date0'          : '2021-04-01',
 		'et0'            : None,
 		'frame'          : 'J2000',
-		'dt'			 : 100,
+		'dt'			 : 200,
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
@@ -231,11 +231,13 @@ class Spacecraft:
 					   		 [-w1, 0, -w3, w2],
 							 [-w2, w3, 0, -w1],
 							 [-w3, -w2, w1, 0]])
+		
+		H = np.matmul(inertiaTens, np.transpose(w))
 
 		state_dot[ :3  ] = v #r dot
 		state_dot[ 3:6 ] = a #v dot
 		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(np.transpose(q), w_matrix)) #q dot
-		state_dot[ 10:13 ] = alpha_g - np.cross(np.transpose(w), np.matmul(inertiaTens, np.transpose(w))) #consider rotational dynamics
+		state_dot[ 10:13 ] = alpha_g - np.matmul(np.cross(np.transpose(w), H), np.linalg.inv(inertiaTens)) #consider rotational dynamics
 		state_dot[ 13 ] = mass_dot
 		return state_dot
 
