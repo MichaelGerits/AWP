@@ -22,22 +22,22 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , raan(deg), aop(deg), ta]
 	
 	coes = [ earth[ 'radius' ] + 25000, 0.0, 0, 0.0, 0.0, 0.0 ]
-	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 0., np.cos(0), 0., 0., 0., 0., 0., 0., 2*np.pi/55316.5383981744]
+	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 0., np.cos(np.pi/4), 0., 0., np.sin(np.pi/4), 0., 0., 0., 0.]
 	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ] #Molniya
 	sc   = SC(
 			{
-			'coes'       : coes,
-			#'orbit_state': state,
-			'actuators'	 : [0., 0., 5e-2, 0., np.pi/(1e6), 0.], #these arethe forces and torques that act with respect to the body axis
+			#'coes'       : coes,
+			'orbit_state': state,
+			'actuators'	 : [0., 0., 0., 1e-5, 1e-5, 0.], #these arethe forces and torques that act with respect to the body axis
 			'mass0'		 : 100.,
 			'inertia0'	 : np.array([[100., 0., 0.],
 						   			 [0., 100., 0.], 
 									 [0., 0., 100.],]),
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
-			'tspan'      : '0.5', 
+			'tspan'      : '1', 
 			#this decides at which points the integrator stores points to be plotted
-			'dt' : 500,
-			'orbit_perts': { 'J2': True }
+			'dt' : 100,
+			'orbit_perts': { 'J2': False }
 			} )
 	sc.plot_3d(ani = True,  args = { 'show': False, 'ani_name': 'orbit.gif', 'frames': None})

@@ -33,7 +33,7 @@ def null_config():
 		'frame'          : 'J2000',
 		'dt'			 : 100,
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
-		'actuators'		 : [], #implement a body axis centered linear and rotaional force
+		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
 		'propagator'     : 'LSODA', #defines which ODE solver is used
@@ -42,10 +42,10 @@ def null_config():
 		'stop_conditions': {}, #list of condistions to stop propagations
 		'print_stop'     : True,
 		'dense_output'   : False,
-		'mass0'          : 0,
-		'inertia0'		 : np.array([[0., 0., 0.],
-						   			 [0., 0., 0.], 
-									 [0., 0., 0.],]),
+		'mass0'          : 1,
+		'inertia0'		 : np.array([[1., 0., 0.],
+						   			 [0., 1., 0.], 
+									 [0., 0., 1.],]),
 		'output_dir'     : '.',
 		'propagate'      : True
 	}
@@ -71,7 +71,7 @@ class Spacecraft:
 			self.config[ 'tspan' ] = float( self.config[ 'tspan'] ) *\
 				oc.state2period( self.config[ 'orbit_state' ], self.cb[ 'mu' ] )
 
-		if len(self.config['actuators']) != 0:
+		if np.linalg.norm(self.config['actuators']) != 0:
 			self.actuators = config['actuators']
 		#allocates memory for the initial orbital state
 		self.state0 = np.zeros( 14 )
@@ -212,9 +212,9 @@ class Spacecraft:
 		#adjusting torque and internal force to the body axis
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
 		a_b = Force/mass
-		a_g = _q.rotatePoint(a_b)
+		a_g = _q.rotatePoint(a_b) #acceleration is in inertial frame, so we convert
 		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
-		alpha_g = _q.rotatePoint(alpha_b) 
+		alpha_g = alpha_b #the rotation is already in the body axis 
 
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
