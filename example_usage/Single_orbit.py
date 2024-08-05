@@ -22,7 +22,7 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , raan(deg), aop(deg), ta]
 	
 	coes = [ earth[ 'radius' ] + 25000, 0.0, 0, 0.0, 0.0, 0.0 ]
-	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 0., np.cos(0), 0, 0., 0., 0.000001, 0.005, 0., 0.]
+	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 0., np.cos(0), 0, 0., 0., 0.00001, 0.0005, 0., 0.]
 	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ] #Molniya
 	sc   = SC(
 			{
@@ -36,8 +36,9 @@ if __name__ == '__main__':
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
 			'tspan'      : '1', 
-			#this decides at which points the integrator stores points to be plotted
+			#this decides at which points the integrator STORES points to be plotted
 			'dt' : 100,
 			'orbit_perts': { 'J2': False }
 			} )
-	sc.plot_3d(ani = True,  args = { 'show': False, 'ani_name': 'orbit.gif', 'frames': None})
+	#frames decides how many frames that are stored are shown, none shows them all
+	sc.plot_3d(ani = True,  args = { 'show': False, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 20})

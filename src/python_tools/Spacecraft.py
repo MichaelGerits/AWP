@@ -305,8 +305,8 @@ class Spacecraft:
 
 	def plot_3d( self, args, ani= True):
 		if ani == True:
-			pt.animate_orbits( self.n_steps,[ self.states[ :, :3 ] ],[self.states[:, 3:6]], [ self.states[:, 6:10] ], args )
-		pt.plot_orbits( [ self.states[ :, :3 ] ], args )
+			pt.animate_orbits( self.n_steps,[ self.states[ :, :3 ] ],[self.states[:, 3:6]], [ self.states[:, 6:10] ], self.ets - len(self.ets) * [self.ets[0]], args )
+		pt.plot_orbits( [ self.states[ :, :3 ] ], args)
 
 	def plot_groundtracks( self, args = { 'show': True } ):
 		if not self.latlons_calculated:

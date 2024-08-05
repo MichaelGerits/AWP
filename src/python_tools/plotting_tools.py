@@ -1053,7 +1053,7 @@ def plot_pseudopotential_contours( system, args ):
 
 	plt.close()
 
-def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
+def animate_orbits(max_steps ,rs, vs, quats, times, args):
 	'''
 	animates the trajectory of the orbits. rs, vs, and quats are lists of the state solutions of all scs
 	'''
@@ -1077,6 +1077,7 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 		'axes_mag'     : 0.8,
 		'title'        : 'Trajectories',
 		'legend'       : False,
+		'showTime'	   : True,
 		'axes_no_fill' : True,
 		'hide_axes'    : False,
 		'azimuth'      : False,
@@ -1084,11 +1085,9 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 		'show'         : False,
 		'ani_name'     : 'orbit.gif',
 		'dpi'          : 100,
+		'fps'		   : 10,
 		'frames'	   : None,
 		'axes_custom'  : None,
-		'vector_colors': [ '' ] * len( vectors ),
-		'vector_labels': [ '' ] * len( vectors ),
-		'vector_texts' : False
 	}
 	
 
@@ -1246,6 +1245,9 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 			if _args[ 'legend' ]:
 				plt.legend()
 
+			if _args["showTime"]:
+				plt.title(f"elapsed time: {times[frame]}")
+
 			plt.savefig(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )), dpi = _args[ 'dpi' ])
 			plt.close()
 		except KeyboardInterrupt:
@@ -1259,7 +1261,8 @@ def animate_orbits(max_steps ,rs, vs, quats, args, vectors = []):
 	print("frames have been created")
 
 	print("rendering gif...")
-	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], duration=frames/2.5, loop=10)
+	#here you can also edit the speed of animation
+	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], fps=_args['fps'], loop=10)
 	#emptying the frames folder
 	for frame in range(frames):
 		os.remove(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )))
