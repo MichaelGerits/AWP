@@ -36,7 +36,7 @@ def null_config():
 		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan(deg)]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
-		'propagator'     : 'LSODA', #defines which ODE solver is used
+		'propagator'     : 'RK45', #defines which ODE solver is used
 		'atol'           : 1e-6, #absolute max error
 		'rtol'           : 1e-6, #relative max error
 		'stop_conditions': {}, #list of condistions to stop propagations
@@ -216,6 +216,7 @@ class Spacecraft:
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
 		a_b = Force/mass / 1000 #convert to km/s^2
 		a_g = _q.rotatePoint(a_b) #acceleration is in inertial frame, so we convert
+		print(a_g)
 		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
 		alpha_g = alpha_b #the rotation is already in the body axis 
 
@@ -224,7 +225,7 @@ class Spacecraft:
 		et       += self.et0 #current ephemeris time
 
 		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2
-
+		
 		for pert in self.orbit_perts_funcs:
 			a += pert( et, state )
 			#TODO: add torque effect for pertubutions
@@ -261,6 +262,7 @@ class Spacecraft:
 			events       = self.stop_condition_functions, #stopping conditions
 			rtol         = self.config[ 'rtol' ], #relative accuracy lim
 			atol         = self.config[ 'atol' ], #absolute accuracy lim
+			max_step 	 = 10,
 			dense_output = self.config[ 'dense_output' ] )
 
 		self.states  = self.ode_sol.y.T
