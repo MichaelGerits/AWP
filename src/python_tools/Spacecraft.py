@@ -216,7 +216,6 @@ class Spacecraft:
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
 		a_b = Force/mass / 1000 #convert to km/s^2
 		a_g = _q.rotatePoint(a_b) #acceleration is in inertial frame, so we convert
-		print(a_g)
 		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
 		alpha_g = alpha_b #the rotation is already in the body axis 
 
@@ -270,11 +269,12 @@ class Spacecraft:
 		self.n_steps = self.states.shape[ 0 ]
 
 	def calc_altitudes( self ):
+		print('Calculating Altitudes...')
 		self.altitudes = np.linalg.norm( self.states[ :, :3 ], axis = 1 ) -\
 						self.cb[ 'radius' ]
 		self.altitudes_calculated = True
 	
-	def calc_coes( self ): #TODO: fix this
+	def calc_coes( self ):
 		print( 'Calculating COEs..' )
 		self.coes = np.zeros( ( self.n_steps, 6 ) )
 
@@ -286,6 +286,7 @@ class Spacecraft:
 		self.coes_calculated = True
 
 	def calc_apoapses_periapses( self ):
+		print("Calculating rp and ap....")
 		if not self.coes_calculated:
 			self.calc_coes()
 
@@ -295,6 +296,7 @@ class Spacecraft:
 		self.ra_rp_calculated = True
 
 	def calc_latlons( self ):
+		print("Calculating lattitudes and longitudes...")
 		#reason we change the frame here is to account for the earth's rotation
 		self.latlons = nt.cart2lat( self.states[ :, :3 ],
 			self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], self.ets )
@@ -333,7 +335,7 @@ class Spacecraft:
 			args )
 
 	def plot_states( self, args = { 'show': True } ):
-		pt.plot_states( self.ets, self.states[ :, :6 ], args )
+		pt.plot_states( self.ets, self.states[ :, :13 ], args )
 
 	def plot_altitudes( self, args = { 'show': True } ):
 		if not self.altitudes_calculated:

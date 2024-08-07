@@ -47,15 +47,13 @@ if __name__ == '__main__':
 									 [0., 0., 100.],]),
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
-			'tspan'      : '2', 
+			'tspan'      : '1', 
 			#this decides at which points the integrator STORES points to be plotted
-			'dt' : 200
+			'dt' : 100
 			} )
 	#frames decides how many frames that are stored are shown, none shows them all
 	sc.plot_3d(ani = False,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 20})
-	print(sc.state0)
 	sc.plot_states()
-	#sc.states = nt.frame_transform(sc.states[:, :6], frame_from='J2000', frame_to='ECLIPJ2000', ets=sc.ets)
 	sc.plot_coes()
 	#sc.calc_latlons()
 	#pt.plot_groundtracks([sc.latlons], {'show': True})

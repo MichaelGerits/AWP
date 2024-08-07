@@ -341,10 +341,10 @@ def plot_orbits( rs, args, vectors = [] ):
 
 def plot_states( ets, states, args ):
 	_args = {
-		'figsize'      : ( 16, 8 ),
+		'figsize'      : ( 14, 8 ),
 		'colors'       : COLORS[ : ],
 		'dist_unit'    : 'km',
-		'time_unit'    : 'seconds',
+		'time_unit'    : 'hours',
 		'lw'           : 2.5,
 		'r_hlines'     : [],
 		'v_hlines'     : [],
@@ -353,6 +353,8 @@ def plot_states( ets, states, args ):
 		'xlim'         : None,
 		'r_ylim'       : None,
 		'v_ylim'       : None,
+		'q_ylim'	   : None,
+		'w_ylim'	   : None,
 		'legend'       : True,
 		'show'         : False,
 		'filename'     : False,
@@ -361,7 +363,7 @@ def plot_states( ets, states, args ):
 	for key in args.keys():
 		_args[ key ] = args[ key ]
 
-	fig, ( ax0, ax1 ) = plt.subplots( 2, 1,
+	fig, ( ax0, ax1, ax2, ax3 ) = plt.subplots( 4, 1,
 		figsize = _args[ 'figsize' ] )
 
 	_args[ 'xlabel' ]     = time_handler[ _args[ 'time_unit' ] ][ 'xlabel' ]
@@ -369,16 +371,24 @@ def plot_states( ets, states, args ):
 	ts     = ets[:] - ets[0]
 	ts    /= _args[ 'time_coeff' ]
 	rnorms = np.linalg.norm( states[ :, :3 ], axis = 1 )
-	vnorms = np.linalg.norm( states[ :, 3: ], axis = 1 )
+	vnorms = np.linalg.norm( states[ :, 3:6 ], axis = 1 )
+	qnorms = np.linalg.norm( states[ :, 6:10 ], axis = 1 )
+	wnorms = np.linalg.norm( states[ :, 10:13 ], axis = 1 )
 
 	if _args[ 'xlim' ] is None:
 		_args[ 'xlim' ] = [ 0, ts[ -1 ] ]
 
 	if _args[ 'r_ylim' ] is None:
-		_args[ 'r_ylim' ] = [ states[ :, :3 ].min(), rnorms.max() ]
+		_args[ 'r_ylim' ] = [ states[ :, :3 ].min() *1.01, rnorms.max() *1.01 ]
 
 	if _args[ 'v_ylim' ] is None:
-		_args[ 'v_ylim' ] = [ states[ :, 3: ].min(), vnorms.max() ]
+		_args[ 'v_ylim' ] = [ states[ :, 3:6 ].min() *1.01, vnorms.max() *1.01 ]
+
+	if _args[ 'q_ylim' ] is None:
+		_args[ 'q_ylim' ] = [ states[ :, 6:10 ].min() *1.01, qnorms.max() *1.01 ]
+
+	if _args[ 'w_ylim' ] is None:
+		_args[ 'w_ylim' ] = [ states[ :, 10:13 ].min() *1.01, wnorms.max() *1.01 ]
 
 	''' Positions '''
 	ax0.plot( ts, states[ :, 0 ], 'r', label = r'$r_x$',
@@ -401,11 +411,11 @@ def plot_states( ets, states, args ):
 			linestyle = _args[ 'hline_lstyles' ] )
 
 	''' Velocities '''
-	ax1.plot( ts, states[ :, 3 ], 'r', label = r'$r_x$',
+	ax1.plot( ts, states[ :, 3 ], 'r', label = r'$v_x$',
 		linewidth = _args[ 'lw' ] )
-	ax1.plot( ts, states[ :, 4 ], 'g', label = r'$r_y$',
+	ax1.plot( ts, states[ :, 4 ], 'g', label = r'$v_y$',
 		linewidth = _args[ 'lw' ] )
-	ax1.plot( ts, states[ :, 5 ], 'b', label = r'$r_z$',
+	ax1.plot( ts, states[ :, 5 ], 'b', label = r'$v_z$',
 		linewidth = _args[ 'lw' ] )
 	ax1.plot( ts, vnorms        , 'm', label = r'$Norms$',
 		linewidth = _args[ 'lw' ] )
@@ -420,6 +430,47 @@ def plot_states( ets, states, args ):
 		ax1.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],
 			color     = hline[ 'color' ],
 			linestyle = _args[ 'hline_lstyles' ] )
+		
+	''' Quaternions '''
+	ax2.plot( ts, states[ :, 6 ], 'w', label = r'$q_0$',
+		linewidth = _args[ 'lw' ] )
+	ax2.plot( ts, states[ :, 7 ], 'r', label = r'$q_1$',
+		linewidth = _args[ 'lw' ] )
+	ax2.plot( ts, states[ :, 8 ], 'g', label = r'$q_2$',
+		linewidth = _args[ 'lw' ] )
+	ax2.plot( ts, states[ :, 9 ], 'b', label = r'$q_3$',
+		linewidth = _args[ 'lw' ] )
+
+	ax2.grid( linestyle = 'dotted' )
+	ax2.set_xlim( _args[ 'xlim'   ] )
+	ax2.set_ylim( _args[ 'q_ylim' ] )
+	ax2.set_ylabel( r'Attitude $(rad)$')
+
+	for hline in _args[ 'r_hlines' ]:
+		ax2.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],
+			color     = hline[ 'color' ],
+			linestyle = _args[ 'hline_lstyles' ] )
+		
+	''' Angular Velocities '''
+	ax3.plot( ts, states[ :, 10 ], 'r', label = r'$\omega_x$',
+		linewidth = _args[ 'lw' ] )
+	ax3.plot( ts, states[ :, 11 ], 'g', label = r'$\omega_y$',
+		linewidth = _args[ 'lw' ] )
+	ax3.plot( ts, states[ :, 12 ], 'b', label = r'$\omega_z$',
+		linewidth = _args[ 'lw' ] )
+	ax3.plot( ts, wnorms        , 'm', label = r'$Norms$',
+		linewidth = _args[ 'lw' ] )
+
+	ax3.grid( linestyle = 'dotted' )
+	ax3.set_xlim( _args[ 'xlim'   ] )
+	ax3.set_ylim( _args[ 'v_ylim' ] )
+	ax3.set_ylabel( r'Velocity $(\dfrac{km}{s})$' )
+	ax3.set_xlabel( _args[ 'xlabel' ] )
+
+	for hline in _args[ 'v_hlines' ]:
+		ax3.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],
+			color     = hline[ 'color' ],
+			linestyle = _args[ 'hline_lstyles' ] )
 
 	plt.suptitle( _args[ 'title' ] )
 	plt.tight_layout()
@@ -427,6 +478,8 @@ def plot_states( ets, states, args ):
 	if _args[ 'legend' ]:
 		ax0.legend()
 		ax1.legend()
+		ax2.legend()
+		ax3.legend()
 
 	if _args[ 'filename' ]:
 		plt.savefig( _args[ 'filename' ], dpi = _args[ 'dpi' ] )
@@ -526,7 +579,7 @@ def plot_coes( ets, coes, args= {} ):
 		'title'    : 'COEs',
 		'title_fs' : 25,
 		'wspace'   : 0.3,
-		'time_unit': 'seconds',
+		'time_unit': 'hours',
 		'show'     : False,
 		'filename' : False,
 		'dpi'      : 300,
@@ -626,7 +679,7 @@ def plot_groundtracks( coords, args ):
 		'dpi'        : 300,
 		'city_colors': CITY_COLORS[ : ],
 		'city_msize' : 3,
-		'city_fsize' : 10,
+		'city_fsize' : 8,
 		'legend'     : True,
 		'surface_image': True,
 		'surface_body' : 'earth',
