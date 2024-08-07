@@ -39,10 +39,38 @@ def state2coes( state, args ):
 		_args[ key ] = args[ key ]
 
 	#gets rid of the strided array problem
-	rx,ry,rz,vx,vy,vz = state
+	#rx,ry,rz,vx,vy,vz = state * 1000
+	r = state[:3] * 1000
+	r_norm = nt.norm(r)
+	v = state[3:6] * 1000
+	v_norm = nt.norm(v)
 
-	rp,e,i,raan,aop,ma,t0,mu,ta,a,T = spice.oscltx( 
-		[rx, ry, rz, vx, vy, vz], _args[ 'et' ], _args[ 'mu' ] )
+	#TODO: add in algorithm
+	h = np.cross(r, v) #vec
+	h_norm = nt.norm(h)
+
+	e = np.cross(v, h)/_args['mu'] - nt.normed(r) #vec
+	e_norm = nt.norm(e) #scal
+
+	n = np.cross([0, 0, 1], h) #vec
+	n_norm = nt.norm(n) #scal
+
+	ta = math.acos(np.dot(e, r)/r_norm/e_norm) #scale
+	if np.dot(r,v)<0: ta=2*np.pi - ta
+
+	i = h[2]/h_norm
+
+	E = 2* math.atan(math.tan(ta/2)/math.sqrt((1+e_norm)/(1-e_norm)))
+
+	aop = np.dot(n,e)/n_norm/e_norm
+	if e[2] < 0: aop= 2*np.pi - aop
+
+	raan = math.acos(n[0]/n_norm) #scale
+	if n[1] < 0:raan= 2*np.pi - raan
+
+	a= 1/(2/r_norm - v_norm**2/_args['mu'])/1000
+
+
 
 	if _args[ 'deg' ]:
 		i    *= nt.r2d
@@ -59,7 +87,7 @@ def state2coes( state, args ):
 		print( 'TA'  , ta   )
 		print()
 
-	return [ a, e, i, ta, aop, raan ]
+	return [ a, e_norm, i, ta, aop, raan ]
 
 def state2period( state, mu = pd.earth['mu'] ):
 
