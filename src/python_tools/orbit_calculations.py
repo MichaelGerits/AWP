@@ -38,39 +38,35 @@ def state2coes( state, args ):
 	for key in args.keys():
 		_args[ key ] = args[ key ]
 
-	#gets rid of the strided array problem
-	#rx,ry,rz,vx,vy,vz = state * 1000
-	r = state[:3] * 1000
+	r = state[:3] 
 	r_norm = nt.norm(r)
-	v = state[3:6] * 1000
+	v = state[3:6]
 	v_norm = nt.norm(v)
 
 	#TODO: add in algorithm
-	h = np.cross(r, v) #vec
+	h = np.cross(r, v) #check
 	h_norm = nt.norm(h)
 
-	e = np.cross(v, h)/_args['mu'] - nt.normed(r) #vec
-	e_norm = nt.norm(e) #scal
+	n = np.cross([0, 0, 1], h) #check
+	n_norm = nt.norm(n)
 
-	n = np.cross([0, 0, 1], h) #vec
-	n_norm = nt.norm(n) #scal
+	e = 1/_args['mu']*np.cross(v, h) - nt.normed(r) #check
+	e_norm = nt.norm(e)
 
-	ta = math.acos(np.dot(e, r)/r_norm/e_norm) #scale
-	if np.dot(r,v)<0: ta=2*np.pi - ta
+	E = 0.5*v_norm**2 - _args['mu']/r_norm #check
 
-	i = h[2]/h_norm
+	a = -_args['mu']/(2*E) #check
 
-	E = 2* math.atan(math.tan(ta/2)/math.sqrt((1+e_norm)/(1-e_norm)))
+	i = math.acos(h[2]/h_norm) #check
 
-	aop = np.dot(n,e)/n_norm/e_norm
-	if e[2] < 0: aop= 2*np.pi - aop
-
-	raan = math.acos(n[0]/n_norm) #scale
+	raan = math.acos(n[0]/nt.norm(n)) #check 
 	if n[1] < 0:raan= 2*np.pi - raan
 
-	a= 1/(2/r_norm - v_norm**2/_args['mu'])/1000
+	aop = math.acos(np.dot(n,e)/n_norm/e_norm) #check
+	if e[2] < 0: aop= 2*np.pi - aop
 
-
+	ta = math.acos(np.dot(r, e)/r_norm/e_norm) 
+	if np.dot(r,v)<0: ta=2*np.pi - ta
 
 	if _args[ 'deg' ]:
 		i    *= nt.r2d
@@ -80,7 +76,7 @@ def state2coes( state, args ):
 
 	if _args[ 'print_coes' ]:
 		print( 'a'   , a    )
-		print( 'e'   , e    )
+		print( 'e'   , e_norm    )
 		print( 'i'   , i    )
 		print( 'RAAN', raan )
 		print( 'AOP' , aop  )

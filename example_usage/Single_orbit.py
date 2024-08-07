@@ -33,7 +33,7 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan]
 	#state = state values are in unit km and km/s, rad and rad/s
 
-	coes = [ earth[ 'radius' ] + 1000, 0., 0, 0., 0., 0. ]
+	coes = [ earth[ 'radius' ] + 1000, 0., 10, 0., 0., 0. ]
 	#state = [100000,  0., 0., 0., 0., 0., np.cos(0), 0, 0., 0., 0., 0., 0., 0.]
 	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ] #Molniya
 	sc   = SC(
@@ -47,9 +47,9 @@ if __name__ == '__main__':
 									 [0., 0., 100.],]),
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
-			'tspan'      : '1', 
+			'tspan'      : '5', 
 			#this decides at which points the integrator STORES points to be plotted
-			'dt' : 100,
+			'dt' : 200,
 			'orbit_perts': { 'J2': False }
 			} )
 	#frames decides how many frames that are stored are shown, none shows them all
