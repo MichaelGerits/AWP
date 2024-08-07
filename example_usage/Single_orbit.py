@@ -10,6 +10,8 @@ Two-body propagation with J2 perturbation for 100 periods
 # Python standard libraries
 from sys import path
 import numpy as np
+import spiceypy as spice
+
 
 #adding in a new path for the custom files to work too
 path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
@@ -17,22 +19,30 @@ path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\s
 # AWP libraries
 from Spacecraft import Spacecraft as SC
 from planetary_data import earth
+import spice_data as sd
+
+
+
 
 if __name__ == '__main__':
-	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , raan(deg), aop(deg), ta]
-	
-	coes = [ earth[ 'radius' ] + 25000, 0.0, 0, 0.0, 0.0, 0.0 ]
-	state = [2.82402000e+04,  0., 0., 0., 3.41236793, 0., np.cos(0), 0, 0., 0., 0.00001, 0.0005, 0., 0.]
+	#import the spice kernel to calc latlons in the earth_IAU frame
+	spice.furnsh( sd.pck00010 )
+
+	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan]
+	#state = state values are in unit km and km/s, rad and rad/s
+
+	coes = [ earth[ 'radius' ] + 25000, 0., 0., 0., 0., 0. ]
+	#state = [100000,  0., 0., 0., 0., 0., np.cos(0), 0, 0., 0., 0., 0., 0., 0.]
 	#coes = [ 26600, 0.64, 63.4, 0.0, 0.0, 0.0 ] #Molniya
 	sc   = SC(
 			{
-			#'coes'       : coes,
-			'orbit_state': state,
-			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these arethe forces and torques that act with respect to the body axis
+			'coes'       : coes,
+			#'orbit_state': state,
+			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these are the forces and torques that act with respect to the body axis
 			'mass0'		 : 100.,
-			'inertia0'	 : np.array([[50., 0., 0.],
+			'inertia0'	 : np.array([[100., 0., 0.],
 						   			 [0., 100., 0.], 
-									 [0., 0., 150.],]),
+									 [0., 0., 100.],]),
 			#Tspan is either the amount or seconds. 
 			#If it is a string,it is the amount of orbits
 			'tspan'      : '1', 
@@ -41,4 +51,11 @@ if __name__ == '__main__':
 			'orbit_perts': { 'J2': False }
 			} )
 	#frames decides how many frames that are stored are shown, none shows them all
-	sc.plot_3d(ani = True,  args = { 'show': False, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 20})
+	sc.plot_3d(ani = False,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 20})
+
+	#sc.plot_states()
+	#sc.plot_coes()
+	
+
+
+

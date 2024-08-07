@@ -34,7 +34,7 @@ def null_config():
 		'dt'			 : 200,
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
-		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , , ,]
+		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan(deg)]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
 		'propagator'     : 'LSODA', #defines which ODE solver is used
 		'atol'           : 1e-6, #absolute max error
@@ -185,6 +185,9 @@ class Spacecraft:
 		return a
 
 	def calc_J2( self, et, state ):
+		'''
+		calc the J2 effect on acceleration in km/s^2
+		'''
 		z2     = state[ 2 ] ** 2
 		norm_r = nt.norm( state[ :3 ] )
 		r2     = norm_r ** 2
@@ -211,20 +214,25 @@ class Spacecraft:
 
 		#adjusting torque and internal force to the body axis
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
-		a_b = Force/mass
+		a_b = Force/mass / 1000 #convert to km/s^2
 		a_g = _q.rotatePoint(a_b) #acceleration is in inertial frame, so we convert
 		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
 		alpha_g = alpha_b #the rotation is already in the body axis 
 
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
-		et       += self.et0
+		et       += self.et0 #current ephemeris time
 
-		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g
+		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2
 
 		for pert in self.orbit_perts_funcs:
 			a += pert( et, state )
 			#TODO: add torque effect for pertubutions
+				#J2
+				#gravity gradient
+				#solar radiation pressure
+				#moon, sun, jupiter gravity effects
+				#magnetic fiels
 
 		#the angular rate matrix to get the dot of the position quaternion
 		w_matrix = np.array([[0, w1, w2, w3],
@@ -263,8 +271,8 @@ class Spacecraft:
 		self.altitudes = np.linalg.norm( self.states[ :, :3 ], axis = 1 ) -\
 						self.cb[ 'radius' ]
 		self.altitudes_calculated = True
-
-	def calc_coes( self ):
+	
+	def calc_coes( self ): #TODO: fix this
 		print( 'Calculating COEs..' )
 		self.coes = np.zeros( ( self.n_steps, 6 ) )
 
@@ -285,6 +293,7 @@ class Spacecraft:
 		self.ra_rp_calculated = True
 
 	def calc_latlons( self ):
+		#reason we change the frame here is to account for the earth's rotation
 		self.latlons = nt.cart2lat( self.states[ :, :3 ],
 			self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], self.ets )
 		self.latlons_calculated = True
@@ -299,7 +308,7 @@ class Spacecraft:
 
 	def plot_eclipse_array( self, args = { 'show': True } ):
 		if not self.eclipses_calculated:
-			self.calc_eclipse_array()
+			self.calc_eclipses()
 
 		pt.plot_eclipse_array( self.ets, self.eclipse_array, args )
 

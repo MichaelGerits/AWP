@@ -143,7 +143,8 @@ def cart2lat( rs, frame_from = None, frame_to = None, ets = None, deg = True ):
 		coordinates in the following order:
 		radial, longitude, latitude
 		'''
-		latlons[ step ] = spice.reclat( rs[ step ] )
+		rx,ry,rz = rs[step]
+		latlons[ step ] = spice.reclat( [rx,ry,rz] )
 
 	if deg:
 		latlons[ :, 1: ] *= r2d

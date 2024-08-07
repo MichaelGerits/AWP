@@ -31,8 +31,9 @@ earth = {
 		'SPICE_ID'        : 399,
 		'mass'            : 5.972e24,
 		'mu'              : 5.972e24 * G,
-		'radius'          : 6378.0,
+		'radius'          : 6378.0, #km
 		'J2'              : 1.081874e-3,
+		'atm_rotation_vec': [0., 0., 72.9211e-6], #rad/s
 		'sma'             : 149.596e6, # km
 		'SOI'             : 926006.6608, # km
 		'deorbit_altitude': 100.0, # km

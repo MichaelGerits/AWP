@@ -207,7 +207,7 @@ def plot_orbits( rs, args, vectors = [] ):
 		'figsize'      : ( 10, 8 ),
 		'labels'       : [ '' ] * len( rs ),
 		'colors'       : COLORS[ : ],
-		'traj_lws'     : 3,
+		'traj_lws'     : 1,
 		'dist_unit'    : 'km',
 		'groundtracks' : False,
 		'cb_radius'    : 6378.0,
@@ -512,7 +512,11 @@ def plot_velocities( ets, vs, args ):
 
 	plt.close()
 
-def plot_coes( ets, coes, args ):
+def plot_coes( ets, coes, args= {} ):
+	'''
+	let coes be a list of all the coes of ass the spacecraft
+	(if one then just a list with one element)
+	'''
 	_args = {
 		'figsize'  : ( 18, 9 ),
 		'labels'   : [ '' ] * len( coes ),
