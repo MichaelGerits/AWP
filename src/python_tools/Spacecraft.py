@@ -228,8 +228,8 @@ class Spacecraft:
 		includes the relative airspeed using the rotational velocity of the atmosphere
 		'''
 
-		r = state[:3]
-		v = state[3:6]
+		r = state[:3] 
+		v = state[3:6] 
 		mass = state[13]
 		q = Quaternion(q=state[6:10])
 		_q = q.conjugate
@@ -246,7 +246,7 @@ class Spacecraft:
 		rho = expo_geom.rho
 		CD = self.config['orbit_perts']['atmos_drag']['CD']
 		A = self.config['orbit_perts']['atmos_drag']['A']
-		v_rel = v-np.cross(self.cb['atm_rotation_vec'],r)
+		v_rel = v*1000-np.cross(self.cb['atm_rotation_vec'],r*1000) #change to si units
 
 		force = -v_rel * nt.norm(v_rel) * 0.5 * rho * CD * A
 		_force = _q.rotatePoint(force) #convert to body fixed frame to calc torque
@@ -264,7 +264,7 @@ class Spacecraft:
 		rx, ry, rz, vx, vy, vz, q0, q1, q2, q3, w1, w2, w3, mass = state
 		r         = np.array( [ rx, ry, rz ] )
 		v         = np.array( [ vx, vy, vz ] )
-		q 		  = np.array( [q0, q1, q2, q3] )
+		q 		  = nt.normed(np.array( [q0, q1, q2, q3] ))
 		w 		  = np.array( [w1, w2, w3] ) #BODY AXIS rotational rate
 		Force		  = np.array( self.config['actuators'][:3]) #body axis force (applied)
 		Torque		  = np.array( self.config['actuators'][3:]) #body axis torque (applied)
@@ -273,7 +273,7 @@ class Spacecraft:
 
 		#adjusting torque and internal force to the body axis
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
-		a_b = Force/mass / 1000 #convert to km/s^2
+		a_b = Force/ mass / 1000 #convert to km/s^2
 		a_g = _q.rotatePoint(a_b) #acceleration is in inertial frame, so we convert
 		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
 		alpha_g = alpha_b #the rotation is already in the body axis 
@@ -376,9 +376,9 @@ class Spacecraft:
 		pt.plot_eclipse_array( self.ets, self.eclipse_array, args )
 
 	def plot_3d( self, args, ani= True):
+		pt.plot_orbits( [ self.states[ :, :3 ] ], args)
 		if ani == True:
 			pt.animate_orbits( self.n_steps,[ self.states[ :, :3 ] ],[self.states[:, 3:6]], [ self.states[:, 6:10] ], self.ets - len(self.ets) * [self.ets[0]], args )
-		pt.plot_orbits( [ self.states[ :, :3 ] ], args)
 
 	def plot_groundtracks( self, args = { 'show': True } ):
 		if not self.latlons_calculated:
