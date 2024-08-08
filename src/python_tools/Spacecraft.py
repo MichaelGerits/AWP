@@ -241,18 +241,23 @@ class Spacecraft:
 		if alt > 1000:
 			return (np.zeros(3), np.zeros(3))
 		
+		#load the exponential model at alt
 		expo_geom = expo(alt)
 
+		#get the density
 		rho = expo_geom.rho
 		CD = self.config['orbit_perts']['atmos_drag']['CD']
 		A = self.config['orbit_perts']['atmos_drag']['A']
+		
+		#get the relative velocity with the atmosphere (atmosphere rotates)
 		v_rel = v*1000-np.cross(self.cb['atm_rotation_vec'],r*1000) #change to si units
 
+		#calc drag force
 		force = -v_rel * nt.norm(v_rel) * 0.5 * rho * CD * A
 		_force = _q.rotatePoint(force) #convert to body fixed frame to calc torque
-		torque = np.cross(self.config[ 'drag_Cp' ], _force)
+		torque = np.cross(self.config[ 'drag_Cp' ], _force) #calc torque
 
-		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), torque)/1000 #convert to km/s^2
+		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), torque)
 		a = force/mass/1000 #convert to km/s^2
 
 		return (a, alpha)
