@@ -268,8 +268,7 @@ class Spacecraft:
 	
 	def calc_mag_torque(self, et, state): #TODO: Fix this first iteration
 		r = state[:3]
-		q = Quaternion(q=state[6:10])
-		r_norm = nt.norm(r) * 1000 
+		q = Quaternion(q=state[6:10]) 
 		D = self.config['orbit_perts']['mag_torque']['di_moment']
 		
 
