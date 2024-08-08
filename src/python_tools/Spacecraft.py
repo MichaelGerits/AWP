@@ -230,11 +230,12 @@ class Spacecraft:
 
 		r = state[:3]
 		v = state[3:6]
-		mass = state[12]
+		mass = state[13]
 		q = Quaternion(q=state[6:10])
 		_q = q.conjugate
 
 		alt = nt.norm(r) - self.cb[ 'radius' ]
+		
 
 		#if the spacecraft is to high for the atmosphere calc
 		if alt > 1000:
@@ -256,7 +257,7 @@ class Spacecraft:
 
 		return (a, alpha)
 	
-	def diffy_q( self, states, et ):
+	def diffy_q( self, et, state ):
 		'''
 		initialises the original states and "derives" it for the ODE
 		'''
