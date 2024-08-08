@@ -15,7 +15,7 @@ from scipy.integrate import solve_ivp
 import spiceypy          as spice
 import numpy             as np
 import matplotlib.pyplot as plt
-from pyatmos import nrlmsise00
+from pyatmos import expo
 plt.style.use( 'dark_background' )
 
 # AWP libraries
@@ -47,6 +47,8 @@ def null_config():
 		'inertia0'		 : np.array([[1., 0., 0.],
 						   			 [0., 1., 0.], 
 									 [0., 0., 1.],]),
+		'drag_Cp'		 : np.zeros(3),
+		'solarPress_Cp'	 : np.zeros(3),
 		'output_dir'     : '.',
 		'propagate'      : True
 	}
@@ -220,10 +222,41 @@ class Spacecraft:
 		return(np.zeros(3), alpha)
 	
 	def calc_atmos_drag(self, et, state):
-		#TODO implement drag
-		return
+		'''
+		calculates the atmospheric drag by making use of an atmosphere model up to 1000km. 
+		Anything above is consodered no drag.
+		includes the relative airspeed using the rotational velocity of the atmosphere
+		'''
+
+		r = state[:3]
+		v = state[3:6]
+		mass = state[12]
+		q = Quaternion(q=state[6:10])
+		_q = q.conjugate
+
+		alt = nt.norm(r) - self.cb[ 'radius' ]
+
+		#if the spacecraft is to high for the atmosphere calc
+		if alt > 1000:
+			return (np.zeros(3), np.zeros(3))
+		
+		expo_geom = expo(alt)
+
+		rho = expo_geom.rho
+		CD = self.config['orbit_perts']['atmos_drag']['CD']
+		A = self.config['orbit_perts']['atmos_drag']['A']
+		v_rel = v-np.cross(self.cb['atm_rotation_vec'],r)
+
+		force = -v_rel * nt.norm(v_rel) * 0.5 * rho * CD * A
+		_force = _q.rotatePoint(force) #convert to body fixed frame to calc torque
+		torque = np.cross(self.config[ 'drag_Cp' ], _force)
+
+		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), torque)/1000 #convert to km/s^2
+		a = force/mass/1000 #convert to km/s^2
+
+		return (a, alpha)
 	
-	def diffy_q( self, et, state ):
+	def diffy_q( self, states, et ):
 		'''
 		initialises the original states and "derives" it for the ODE
 		'''
