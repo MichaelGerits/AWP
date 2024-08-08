@@ -19,7 +19,7 @@ import numpy as np
 
 aops   = np.arange( 0, 360, 10 )
 inc   = 60
-coes   = [ earth[ 'radius' ] + 11000, 0.0, 0.0, 0.0, 0.0, 0.0 ]
+coes   = [ earth[ 'radius' ] + 1000, 0.0, 0.0, 0.0, 0.0, 0.0 ]
 scs    = []
 config = {
 	'tspan': '1',
@@ -27,7 +27,7 @@ config = {
 }
 
 print( len( aops ))
-max_steps = 1e10
+max_steps = np.inf
 stp_index = 0
 #TODO simulate simultaniosly to get rid of the problem
 if __name__ == '__main__':
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 			#If it is a string,it is the amount of orbits
 			'tspan'      : '2', 
 			#this decides at which points the integrator stores points to be plotted
-			'dt' : 100,
+			'dt' : 200,
 			'orbit_perts': { 'J2': True },
 
 		}

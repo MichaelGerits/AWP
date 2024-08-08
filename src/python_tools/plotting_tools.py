@@ -379,16 +379,16 @@ def plot_states( ets, states, args ):
 		_args[ 'xlim' ] = [ 0, ts[ -1 ] ]
 
 	if _args[ 'r_ylim' ] is None:
-		_args[ 'r_ylim' ] = [ states[ :, :3 ].min() *1.01, rnorms.max() *1.01 ]
+		_args[ 'r_ylim' ] = [ (states[ :, :3 ].min() - rnorms.max()*0.05) * 1.1, (rnorms.max()) * 1.1 ]
 
 	if _args[ 'v_ylim' ] is None:
-		_args[ 'v_ylim' ] = [ states[ :, 3:6 ].min() *1.01, vnorms.max() *1.01 ]
+		_args[ 'v_ylim' ] = [ (states[ :, 3:6 ].min() - vnorms.max()*0.05) * 1.1, (vnorms.max()) * 1.1 ]
 
 	if _args[ 'q_ylim' ] is None:
-		_args[ 'q_ylim' ] = [ states[ :, 6:10 ].min() *1.01, qnorms.max() *1.01 ]
+		_args[ 'q_ylim' ] = [ (states[ :, 6:10 ].min() - qnorms.max()*0.05) * 1.1, (qnorms.max()) * 1.1 ]
 
 	if _args[ 'w_ylim' ] is None:
-		_args[ 'w_ylim' ] = [ states[ :, 10:13 ].min() *1.01, wnorms.max() *1.01 ]
+		_args[ 'w_ylim' ] = [ (states[ :, 10:13 ].min() - wnorms.max()*0.05) * 1.1, (wnorms.max()) * 1.1 ]
 
 	''' Positions '''
 	ax0.plot( ts, states[ :, 0 ], 'r', label = r'$r_x$',
@@ -440,6 +440,8 @@ def plot_states( ets, states, args ):
 		linewidth = _args[ 'lw' ] )
 	ax2.plot( ts, states[ :, 9 ], 'b', label = r'$q_3$',
 		linewidth = _args[ 'lw' ] )
+	ax2.plot( ts, qnorms		, 'm', label = r'$Norm$',
+		linewidth = _args[ 'lw' ] )
 
 	ax2.grid( linestyle = 'dotted' )
 	ax2.set_xlim( _args[ 'xlim'   ] )
@@ -463,8 +465,8 @@ def plot_states( ets, states, args ):
 
 	ax3.grid( linestyle = 'dotted' )
 	ax3.set_xlim( _args[ 'xlim'   ] )
-	ax3.set_ylim( _args[ 'v_ylim' ] )
-	ax3.set_ylabel( r'Velocity $(\dfrac{km}{s})$' )
+	ax3.set_ylim( _args[ 'w_ylim' ] )
+	ax3.set_ylabel( r'Angular Velocity $(\dfrac{rad}{s})$' )
 	ax3.set_xlabel( _args[ 'xlabel' ] )
 
 	for hline in _args[ 'v_hlines' ]:
@@ -1197,7 +1199,7 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 					r1, r2, r3 = _r[frame, :3]
 					z_dir = _r[frame, :3]/np.linalg.norm(_r[frame, :3])
 					#correct x_axis for non-circularity by subtracting the projection on z
-					x_dir = (_v[:3] - (np.dot(_v[:3], z_dir)/np.dot(z_dir, z_dir))  * z_dir)/np.linalg.norm(_v[:3])  
+					x_dir = (_v[:3] - (np.dot(_v[:3], z_dir)) / np.dot(z_dir, z_dir)* z_dir)/np.linalg.norm(_v[:3])  
 					y_dir = -np.cross(z_dir, x_dir)
 					#x axis
 					x1, x2, x3 = x_dir * l

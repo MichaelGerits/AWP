@@ -15,6 +15,7 @@ from scipy.integrate import solve_ivp
 import spiceypy          as spice
 import numpy             as np
 import matplotlib.pyplot as plt
+from pyatmos import nrlmsise00
 plt.style.use( 'dark_background' )
 
 # AWP libraries
@@ -134,7 +135,9 @@ class Spacecraft:
 	
 		self.orbit_perts_funcs_map = {
 			'J2'      : self.calc_J2,
-			'n_bodies': self.calc_n_bodies
+			'n_bodies': self.calc_n_bodies,
+			'grav_grad': self.calc_grav_gradient,
+			'atmos_drag': self.calc_atmos_drag
 		}
 		self.orbit_perts_funcs = []
 
@@ -194,10 +197,32 @@ class Spacecraft:
 		tx     = state[ 0 ] / norm_r * ( 5 * z2 / r2 - 1 )
 		ty     = state[ 1 ] / norm_r * ( 5 * z2 / r2 - 1 )
 		tz     = state[ 2 ] / norm_r * ( 5 * z2 / r2 - 3 )
-		return 1.5 * self.cb[ 'J2' ] * self.cb[ 'mu' ] *\
+		return (1.5 * self.cb[ 'J2' ] * self.cb[ 'mu' ] *\
 			   self.cb[ 'radius' ] ** 2 \
-			 / r2 ** 2 * np.array( [ tx, ty, tz ] )
+			 / r2 ** 2 * np.array( [ tx, ty, tz ] ), np.zeros(3))
 
+	def calc_grav_gradient( self, et, state):
+		'''
+		calc the gravity gradiens effect.
+		'''
+		q = Quaternion(q=state[6:10])
+		_q = q.conjugate 
+		r =  state[ :3 ]  
+		_r = _q.rotatePoint(r) #rotate position vector to the body axis frame
+		norm_r = nt.norm( _r )
+
+		mult = np.matmul(self.config[ 'inertia0' ], _r)
+		cross = np.cross(_r, mult)
+		T = 3*self.cb[ 'mu' ]/(norm_r**5) * cross 
+
+		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), T)
+
+		return(np.zeros(3), alpha)
+	
+	def calc_atmos_drag(self, et, state):
+		#TODO implement drag
+		return
+	
 	def diffy_q( self, et, state ):
 		'''
 		initialises the original states and "derives" it for the ODE
@@ -205,7 +230,7 @@ class Spacecraft:
 		rx, ry, rz, vx, vy, vz, q0, q1, q2, q3, w1, w2, w3, mass = state
 		r         = np.array( [ rx, ry, rz ] )
 		v         = np.array( [ vx, vy, vz ] )
-		q 		  = np.array( [q0, q1,q2, q3] )
+		q 		  = np.array( [q0, q1, q2, q3] )
 		w 		  = np.array( [w1, w2, w3] ) #BODY AXIS rotational rate
 		Force		  = np.array( self.config['actuators'][:3]) #body axis force (applied)
 		Torque		  = np.array( self.config['actuators'][3:]) #body axis torque (applied)
@@ -223,16 +248,16 @@ class Spacecraft:
 		state_dot = np.zeros( 14 )
 		et       += self.et0 #current ephemeris time
 
-		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2
+		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2 #TODO:add axact gravity acceleration model
 		
 		for pert in self.orbit_perts_funcs:
-			a += pert( et, state )
+			effect = pert( et, state )
+			a += effect[0]
+			alpha_g += effect[1]
 			#TODO: add torque effect for pertubutions
-				#J2
-				#gravity gradient
 				#solar radiation pressure
 				#moon, sun, jupiter gravity effects
-				#magnetic fiels
+				#magnetic fields
 
 		#the angular rate matrix to get the dot of the position quaternion
 		w_matrix = np.array([[0, w1, w2, w3],
@@ -240,12 +265,12 @@ class Spacecraft:
 							 [-w2, w3, 0, -w1],
 							 [-w3, -w2, w1, 0]])
 		
-		H = np.matmul(inertiaTens, np.transpose(w))
+		H = np.matmul(inertiaTens, w)
 
 		state_dot[ :3  ] = v #r dot
 		state_dot[ 3:6 ] = a #v dot
-		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(np.transpose(q), w_matrix)) #q dot
-		state_dot[ 10:13 ] = alpha_g - np.matmul(np.cross(np.transpose(w), H), np.linalg.inv(inertiaTens)) #consider rotational dynamics
+		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(q, w_matrix)) #q dot
+		state_dot[ 10:13 ] = alpha_g - np.matmul(np.cross(w, H), np.linalg.inv(inertiaTens)) #consider rotational dynamics
 		state_dot[ 13 ] = mass_dot
 		return state_dot
 
@@ -261,7 +286,7 @@ class Spacecraft:
 			events       = self.stop_condition_functions, #stopping conditions
 			rtol         = self.config[ 'rtol' ], #relative accuracy lim
 			atol         = self.config[ 'atol' ], #absolute accuracy lim
-			max_step 	 = 10,
+			#max_step 	 = 10,
 			dense_output = self.config[ 'dense_output' ] )
 
 		self.states  = self.ode_sol.y.T
