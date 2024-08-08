@@ -9,6 +9,7 @@ Spacecraft class definition
 # Python standard libraries
 import os
 import math as m
+import warnings
 
 # 3rd party libraries
 from scipy.integrate import solve_ivp
@@ -16,6 +17,8 @@ import spiceypy          as spice
 import numpy             as np
 import matplotlib.pyplot as plt
 from pyatmos import expo
+import ppigrf
+from datetime import datetime
 plt.style.use( 'dark_background' )
 
 # AWP libraries
@@ -29,7 +32,7 @@ from tinyQuaternion import Quaternion
 def null_config():
 	return {
 		'cb'             : pd.earth,
-		'date0'          : '2021-04-01',
+		'date0'          : '2020-04-01',
 		'et0'            : None,
 		'frame'          : 'J2000',
 		'dt'			 : 200,
@@ -139,7 +142,8 @@ class Spacecraft:
 			'J2'      : self.calc_J2,
 			'n_bodies': self.calc_n_bodies,
 			'grav_grad': self.calc_grav_gradient,
-			'atmos_drag': self.calc_atmos_drag
+			'atmos_drag': self.calc_atmos_drag,
+			'mag_torque':self.calc_mag_torque
 		}
 		self.orbit_perts_funcs = []
 
@@ -177,7 +181,7 @@ class Spacecraft:
 	def print_stop_condition( self, parameter ):
 		print( f'Spacecraft has reached {parameter}.' )
 
-	def calc_n_bodies( self, et, state ):
+	def calc_n_bodies( self, et, state ):#TODO: add attitude effect
 		a = np.zeros( 3 )
 		for body in self.config[ 'orbit_perts' ][ 'n_bodies' ]:
 			r_cb2body  = spice.spkgps( body[ 'SPICE_ID' ], et,
@@ -187,9 +191,9 @@ class Spacecraft:
 			a += body[ 'mu' ] * (\
 				 r_sc2body / nt.norm( r_sc2body ) ** 3 -\
 				 r_cb2body / nt.norm( r_cb2body ) ** 3 )
-		return a
+		return (a, np.zeros(3))
 
-	def calc_J2( self, et, state ):
+	def calc_J2( self, et, state ): #TODO: attitude effect?
 		'''
 		calc the J2 effect on acceleration in km/s^2
 		'''
@@ -262,6 +266,48 @@ class Spacecraft:
 
 		return (a, alpha)
 	
+	def calc_mag_torque(self, et, state): #TODO: Fix this first iteration
+		r = state[:3]
+		q = Quaternion(q=state[6:10])
+		r_norm = nt.norm(r) * 1000 
+		D = self.config['orbit_perts']['mag_torque']['di_moment']
+		
+
+		#gets the longitude, lattitude and the radius
+		rad, lon, lat = nt.cart2lat( np.array([r]),self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], np.array([et]))[0]
+		print(lat)
+		alt = rad-self.cb['radius']
+
+		date = spice.et2utc(et, format_str='ISOC', prec=0).replace('T', ' ')[:10].split('-')
+		date = datetime(int(date[0]), int(date[1]), int(date[2]))
+
+		warnings.filterwarnings('ignore')	
+		Be, Bn, Bu = ppigrf.igrf(lon, lat, alt, date)
+		warnings.filterwarnings('default')	
+
+		#gets the ENU frame vector of the field
+		mag_ENU = np.array([Be[0,0], Bn[0,0], Bu[0,0]])
+
+		R = np.array([[-np.sin(lon)            , np.cos(lon)             , 0          ],
+					  [-np.sin(lat)*np.cos(lon), -np.sin(lat)*np.sin(lon), np.cos(lat)],
+					  [np.cos(lat)*np.cos(lon) , np.cos(lat)*np.sin(lon) , np.sin(lat)]])
+		
+		mag_IAU = np.matmul(R, mag_ENU)
+
+		if np.shape(mag_IAU) == 0:
+			print('no magnetic field found, try changing the date before 2025')
+			exit()
+
+		mag_Inert = nt.frame_transform(np.array([mag_IAU]), self.cb[ 'body_fixed_frame' ], self.config[ 'frame' ], np.array([et]))[0]
+
+		mag_body = q.rotatePoint(mag_Inert)
+
+		Torque = np.cross(D, mag_body)
+
+		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), Torque)
+		
+		return (np.zeros(3), alpha)
+	
 	def diffy_q( self, et, state ):
 		'''
 		initialises the original states and "derives" it for the ODE
@@ -285,7 +331,7 @@ class Spacecraft:
 
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
-		et       += self.et0 #current ephemeris time
+		
 
 		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2 #TODO:add axact gravity acceleration model
 		

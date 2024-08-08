@@ -53,8 +53,9 @@ if __name__ == '__main__':
 			'tspan'      : '20', 
 			#this decides at which points the integrator STORES points to be plotted
 			'dt' : 200,
-			'orbit_perts': {'atmos_drag': {'CD': 2.2, 'A': 10} }
+			#'orbit_perts': {'atmos_drag': {'CD': 2.2, 'A': 10} }
 			#'orbit_perts': {'grav_grad': True}
+			'orbit_perts': {'mag_torque': {'di_moment': np.array([0.05, 0., 0.])}}
 			} )
 	#frames decides how many frames that are stored are shown, none shows them all
 	sc.plot_states()
