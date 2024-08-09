@@ -667,6 +667,78 @@ def plot_coes( ets, coes, args= {} ):
 
 	plt.close()
 
+def plot_sun_dirs( ets, sun_dirs, args ):
+	_args = {
+		'figsize'          : ( 16, 8 ),
+		'angle_unit'        : 'deg',
+		'time_unit'        : 'hours',
+		'hlines'           : [],
+		'hline_lstyles'    : 'dotted',
+		'lw'               : 2,
+		'labelsize'        : 15,
+		'legend_fontsize'  : 20,
+		'legend_framealpha': 0.3,
+		'title'            : 'Sun direction angles',
+		'xlim'             : None,
+		'ylim'             : None,
+		'legend'           : True,
+		'show'             : False,
+		'filename'         : False,
+		'dpi'              : 300,
+	}
+	for key in args.keys():
+		_args[ key ] = args[ key ]
+
+	fig, ax0 = plt.subplots( 1, 1, figsize = _args[ 'figsize' ] )
+
+	_args[ 'xlabel' ] = time_handler[ _args[ 'time_unit' ] ][ 'xlabel' ]
+	time_coeff        = time_handler[ _args[ 'time_unit' ] ][ 'coeff'  ]
+
+	_ets   = ets.copy() - ets[ 0 ]
+	_ets  /= time_coeff
+
+	if _args[ 'xlim' ] is None:
+		_args[ 'xlim' ] = [ 0, _ets[ -1 ] ]
+
+	if _args[ 'ylim' ] is None:
+		_args[ 'ylim' ] = [ 0, sun_dirs.max()*1.1 ]
+
+	ax0.plot( _ets, sun_dirs[ :, 0 ], 'r', label = r'$\alpha$',
+		linewidth = _args[ 'lw' ] )
+	ax0.plot( _ets, sun_dirs[ :, 1 ], 'g', label = r'$\beta$',
+		linewidth = _args[ 'lw' ] )
+	ax0.plot( _ets, sun_dirs[ :, 2 ], 'b', label = r'$\gamma$',
+		linewidth = _args[ 'lw' ]  )
+
+	ax0.grid( linestyle = 'dotted' )
+	ax0.set_xlim( _args[ 'xlim'   ] )
+	ax0.set_ylim( _args[ 'ylim' ] )
+	ax0.set_xlabel( _args[ 'xlabel' ], size = _args[ 'labelsize' ] )
+	ax0.set_ylabel( r'Angles $(°)$',
+		size = _args[ 'labelsize' ] )
+
+	for hline in _args[ 'hlines' ]:
+		ax0.hlines( hline[ 'val' ], _ets[ 0 ], _ets[ -1 ],
+			color     = hline[ 'color' ],
+			linewidth = _args[ 'lw' ],
+			linestyle = _args[ 'hline_lstyles' ] )
+
+	plt.suptitle( _args[ 'title' ] )
+	plt.tight_layout()
+
+	if _args[ 'legend' ]:
+		ax0.legend( fontsize = _args[ 'legend_fontsize' ],
+			loc = 'upper right', framealpha = _args[ 'legend_framealpha' ] )
+
+	if _args[ 'filename' ]:
+		plt.savefig( _args[ 'filename' ], dpi = _args[ 'dpi' ] )
+		print( 'Saved', _args[ 'filename' ] )
+
+	if _args[ 'show' ]:
+		plt.show()
+
+	plt.close()
+
 def plot_groundtracks( coords, args ):
 	_args = {
 		'figsize'    : ( 18, 9 ),

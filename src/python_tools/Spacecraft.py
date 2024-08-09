@@ -82,7 +82,7 @@ class Spacecraft:
 		#allocates memory for the initial orbital state
 		self.state0 = np.zeros( 14 )
 		#adds initial pos (3d) and vel (3d) + a 4d quaternoin + 3d angular rate
-		self.state0[ :13 ] = self.config[ 'orbit_state' ][ :13 ]
+		self.state0[ :13 ] = self.config[ 'orbit_state' ]
 		
 		#adds the initial mass
 		self.state0[ 13 ] = self.config[ 'mass0' ]
@@ -92,6 +92,7 @@ class Spacecraft:
 		self.altitudes_calculated = False
 		self.ra_rp_calculated     = False
 		self.eclipses_calculated  = False
+		self.sun_dirs_calculated  = False
 
 		self.assign_stop_condition_functions()
 		self.assign_orbit_perturbations_functions()
@@ -346,7 +347,7 @@ class Spacecraft:
 		F = (1+ref)*G1*A/(d_sun**2)*sun_dir
 		torque = np.cross(Cp, _q.rotatePoint(F*1000)) #rotate to body frame and multiply by 1000 to go to SI units (Nm)
 
-		a = F/state[13] #km/s^2
+		a = F/mass #km/s^2
 		alpha = np.matmul(np.linalg.inv(self.config['inertia0']), torque) #rad/s^2
 		return (a, alpha)
 	
@@ -367,7 +368,7 @@ class Spacecraft:
 		#adjusting torque and internal force to the body axis
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
 		a_b = Force/ mass / 1000 #convert to km/s^2
-		a_g = _q.rotatePoint(a_b) #acceleration is in inertial frame, so we convert
+		a_g = _q.rotatePoint(a_b) #total acceleration is in inertial frame, so we convert
 		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
 		alpha_g = alpha_b #the rotation is already in the body axis 
 
@@ -443,7 +444,29 @@ class Spacecraft:
 		self.coes_rel        = self.coes[ : ] - self.coes[ 0, : ]
 		self.coes_calculated = True
 
-	#TODO calc+plot sun dir throughout the orbit
+	def calc_sun_dirs( self ):
+		'''
+		calculates the directional angles between the body fixed frame and the direction of the sun in degrees
+		'''
+		print( 'Calculating sun directions..' )
+		self.sun_dirs = np.zeros( ( self.n_steps, 3 ) )
+		axes = np.array([[1,0,0],
+							  		[0,1,0],
+									[0,0,1]])
+
+		for n in range( self.n_steps ):
+			q = Quaternion(q=self.states[n, 6:10])
+			_q = q.conjugate #rotation vector to vonvert to body axis
+
+			r_cb2body  = spice.spkgps( pd.sun[ 'SPICE_ID' ], self.ets[n], self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
+			r_body2sc = (r_cb2body - self.states[n, :3])
+			sun_dir = _q.rotatePoint(nt.normed(r_body2sc)) #TODO: check if the direction is correct
+			alpha = nt.vecs2angle(axes[0], sun_dir)
+			beta = nt.vecs2angle(axes[1], sun_dir)
+			gamma = nt.vecs2angle(axes[2], sun_dir)
+
+			self.sun_dirs[n] = [alpha, beta, gamma]
+		self.sun_dirs_calculated = True
 	
 	def calc_apoapses_periapses( self ):
 		print("Calculating rp and ap....")
@@ -493,6 +516,12 @@ class Spacecraft:
 
 		pt.plot_coes( self.ets[ ::step ], [ self.coes[ ::step ] ],
 			args )
+
+	def plot_sun_dirs(self, args = { 'show': True}, step = 1):
+		if not self.sun_dirs_calculated:
+			self.calc_sun_dirs()
+
+		pt.plot_sun_dirs( self.ets[ ::step ], self.sun_dirs[ ::step ], args )
 
 	def plot_states( self, args = { 'show': True } ):
 		pt.plot_states( self.ets, self.states[ :, :13 ], args )
