@@ -29,8 +29,6 @@ import planetary_data as pd
 
 if __name__ == '__main__':
 	
-
-
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan]
 	#state = state values are in unit km and km/s, rad and rad/s
 
@@ -50,8 +48,7 @@ if __name__ == '__main__':
 			'solarPress_Cp'	 : np.array([-5., 0., 0.]),
 			'tspan'      : '1', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
 			'dt' : 200, #this decides at which points the integrator STORES points to be plotted
-			#'orbit_perts': {'mag_torque': {'di_moment': np.array([0.05, 0., 0.])}}
-			#'orbit_perts': {'solar_press': {'ref': 0.9, 'A': 10} }
+			'orbit_perts': {}
 			} )
 	sc.plot_states()
 	#sc.plot_coes()

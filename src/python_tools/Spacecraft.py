@@ -9,7 +9,7 @@ Spacecraft class definition
 # Python standard libraries
 import os
 import math as m
-import warnings
+
 
 # 3rd party libraries
 from scipy.integrate import solve_ivp
@@ -17,7 +17,7 @@ import spiceypy          as spice
 import numpy             as np
 import matplotlib.pyplot as plt
 from pyatmos import expo
-import ppigrf
+
 from datetime import datetime
 plt.style.use( 'dark_background' )
 
@@ -301,9 +301,7 @@ class Spacecraft:
 		date = spice.et2utc(et, format_str='ISOC', prec=0).replace('T', ' ')[:10].split('-')
 		date = datetime(int(date[0]), int(date[1]), int(date[2]))
 
-		warnings.filterwarnings('ignore')	
-		Be, Bn, Bu = ppigrf.igrf(lon, lat, alt, date)
-		warnings.filterwarnings('default')	
+		Be, Bn, Bu = None #TODO:Find a way to calculate the magnetic field at a certain position
 
 		#gets the ENU frame vector of the field
 		mag_ENU = np.array([Be[0,0], Bn[0,0], Bu[0,0]])
