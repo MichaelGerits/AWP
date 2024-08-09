@@ -443,6 +443,8 @@ class Spacecraft:
 		self.coes_rel        = self.coes[ : ] - self.coes[ 0, : ]
 		self.coes_calculated = True
 
+	#TODO calc+plot sun dir throughout the orbit
+	
 	def calc_apoapses_periapses( self ):
 		print("Calculating rp and ap....")
 		if not self.coes_calculated:
