@@ -40,7 +40,7 @@ def null_config():
 		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan(deg)]
 		'orbit_perts'    : {}, #defines a list of what pertubations are to be included
-		'propagator'     : 'RK45', #defines which ODE solver is used
+		'propagator'     : 'DOP853', #defines which ODE solver is used
 		'atol'           : 1e-6, #absolute max error
 		'rtol'           : 1e-6, #relative max error
 		'stop_conditions': {}, #list of condistions to stop propagations
@@ -143,7 +143,8 @@ class Spacecraft:
 			'n_bodies': self.calc_n_bodies,
 			'grav_grad': self.calc_grav_gradient,
 			'atmos_drag': self.calc_atmos_drag,
-			'mag_torque':self.calc_mag_torque
+			'mag_torque':self.calc_mag_torque,
+			'solar_press': self.calc_solar_press
 		}
 		self.orbit_perts_funcs = []
 
@@ -152,8 +153,11 @@ class Spacecraft:
 				self.orbit_perts_funcs_map[ key ] )
 
 	def load_spice_kernels( self ):
+		print('LOADING SPICE KERNELS...')
 		spice.furnsh( sd.leapseconds_kernel )
-		self.spice_kernels_loaded = [ sd.leapseconds_kernel ]
+		spice.furnsh( sd.pck00010 )
+		spice.furnsh( sd.de432 )
+		self.spice_kernels_loaded = [ sd.leapseconds_kernel, sd.de432, sd.pck00010 ]
 
 		if self.config[ 'et0' ] is not None:
 			self.et0 = self.config[ 'et0' ]
@@ -185,7 +189,8 @@ class Spacecraft:
 		a = np.zeros( 3 )
 		alpha = np.zeros( 3 )
 		q = Quaternion(q=state[6:10])
-		_q = q.conjugate  
+		_q = q.conjugate
+		#get theposition vector of each body relative to the sc  
 		for body in self.config[ 'orbit_perts' ][ 'n_bodies' ]:
 			r_cb2body  = spice.spkgps( body[ 'SPICE_ID' ], et,
 				self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ]
@@ -202,12 +207,13 @@ class Spacecraft:
 
 			mult = np.matmul(self.config[ 'inertia0' ], _r)
 			cross = np.cross(_r, mult)
+			#same as grav gradient torque
 			T = 3*self.cb[ 'mu' ]/(norm_r**5) * cross 
 
 			alpha += np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), T)
 		return (a, alpha)
 
-	def calc_J2( self, et, state ): #TODO: attitude effect?
+	def calc_J2( self, et, state ):
 		'''
 		calc the J2 effect on acceleration in km/s^2
 		'''
@@ -233,7 +239,7 @@ class Spacecraft:
 
 		mult = np.matmul(self.config[ 'inertia0' ], _r)
 		cross = np.cross(_r, mult)
-		T = 3*self.cb[ 'mu' ]/(norm_r**5) * cross 
+		T = 3*self.cb[ 'mu' ]/(norm_r**5) * cross #the units work themselves out
 
 		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), T)
 
@@ -280,7 +286,7 @@ class Spacecraft:
 
 		return (a, alpha)
 	
-	def calc_mag_torque(self, et, state): #TODO: Fix this first iteration
+	def calc_mag_torque(self, et, state): #TODO: Find better way to find magnetic field (does not work)
 		r = state[:3]
 		q = Quaternion(q=state[6:10]) 
 		D = self.config['orbit_perts']['mag_torque']['di_moment']
@@ -321,6 +327,29 @@ class Spacecraft:
 		
 		return (np.zeros(3), alpha)
 	
+	def calc_solar_press(self, et,  state):
+		r = state[:3] 
+		mass = state[13]
+		q = Quaternion(q=state[6:10])
+		_q = q.conjugate #rotation vector to vonvert to body axis
+
+		r_cb2body  = spice.spkgps( pd.sun[ 'SPICE_ID' ], et, self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
+		r_body2sc = -(r_cb2body - r)
+		d_sun = nt.norm(r_body2sc)
+		sun_dir = nt.normed(r_body2sc)
+
+		ref = self.config['orbit_perts']['solar_press']['ref'] #reflectivity
+		A = self.config['orbit_perts']['solar_press']['A'] #area
+		G1=1e8 #constant (kg * km^3/ (s^2 * m^2))
+		Cp = self.config['solarPress_Cp'] #body position of centre of pressure
+
+		F = (1+ref)*G1*A/(d_sun**2)*sun_dir
+		torque = np.cross(Cp, _q.rotatePoint(F*1000)) #rotate to body frame and multiply by 1000 to go to SI units (Nm)
+
+		a = F/state[13] #km/s^2
+		alpha = np.matmul(np.linalg.inv(self.config['inertia0']), torque) #rad/s^2
+		return (a, alpha)
+	
 	def diffy_q( self, et, state ):
 		'''
 		initialises the original states and "derives" it for the ODE
@@ -344,18 +373,15 @@ class Spacecraft:
 
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
-		
 
 		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2 #TODO:add axact gravity acceleration model
 		
+		#add up all the pertubation effects
 		for pert in self.orbit_perts_funcs:
 			effect = pert( et, state )
 			a += effect[0]
 			alpha_g += effect[1]
-			#TODO: add torque effect for pertubutions
-				#solar radiation pressure
-				#moon, sun, jupiter gravity effects
-				#magnetic fields
+				
 
 		#the angular rate matrix to get the dot of the position quaternion
 		w_matrix = np.array([[0, w1, w2, w3],
@@ -365,6 +391,7 @@ class Spacecraft:
 		
 		H = np.matmul(inertiaTens, w)
 
+		#get the time derivative of the state
 		state_dot[ :3  ] = v #r dot
 		state_dot[ 3:6 ] = a #v dot
 		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(q, w_matrix)) #q dot
@@ -384,7 +411,7 @@ class Spacecraft:
 			events       = self.stop_condition_functions, #stopping conditions
 			rtol         = self.config[ 'rtol' ], #relative accuracy lim
 			atol         = self.config[ 'atol' ], #absolute accuracy lim
-			#max_step 	 = 10,
+			#max_step 	 = 50, #TODO: fix the integrator/diffy_q to get rid of the errors
 			dense_output = self.config[ 'dense_output' ] )
 
 		self.states  = self.ode_sol.y.T
@@ -402,8 +429,16 @@ class Spacecraft:
 		self.coes = np.zeros( ( self.n_steps, 6 ) )
 
 		for n in range( self.n_steps ):
-			self.coes[ n, : ] = oc.state2coes( 
-				self.states[ n, :6 ], { 'mu': self.cb[ 'mu' ] } )
+			self.coes[ n, : ] = oc.state2coes(self.states[ n, :6 ], { 'mu': self.cb[ 'mu' ], 'et': self.ets[n] } )
+			rdif = []
+			vdif = []
+			angdif = []
+			rdif.append(nt.norm(self.states[n, :3]) - nt.norm(self.state0[:3]))
+			vdif.append(nt.norm(self.states[n, 3:6]) - nt.norm(self.state0[3:6]))
+			angdif.append(nt.vecs2angle(self.states[n, :3], self.states[n, 3:6]) - 90)
+		print(f'max position delta: {max(rdif)} (km)')
+		print(f'max velocity delta: {max(vdif)} (km/s)')
+		print(f'max angular delta (from 90°): {max(angdif)} (°)')
 			
 		self.coes_rel        = self.coes[ : ] - self.coes[ 0, : ]
 		self.coes_calculated = True
