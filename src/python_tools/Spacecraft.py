@@ -205,7 +205,7 @@ class Spacecraft:
 			T = 3*self.cb[ 'mu' ]/(norm_r**5) * cross 
 
 			alpha += np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), T)
-		return (a, np.zeros(3))
+		return (a, alpha)
 
 	def calc_J2( self, et, state ): #TODO: attitude effect?
 		'''
