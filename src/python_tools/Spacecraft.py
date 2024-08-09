@@ -181,16 +181,30 @@ class Spacecraft:
 	def print_stop_condition( self, parameter ):
 		print( f'Spacecraft has reached {parameter}.' )
 
-	def calc_n_bodies( self, et, state ):#TODO: add attitude effect
+	def calc_n_bodies( self, et, state ):
 		a = np.zeros( 3 )
+		alpha = np.zeros( 3 )
+		q = Quaternion(q=state[6:10])
+		_q = q.conjugate  
 		for body in self.config[ 'orbit_perts' ][ 'n_bodies' ]:
 			r_cb2body  = spice.spkgps( body[ 'SPICE_ID' ], et,
 				self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ]
 			r_sc2body = r_cb2body - state[ :3 ]
 
+			#calc acceleration
 			a += body[ 'mu' ] * (\
 				 r_sc2body / nt.norm( r_sc2body ) ** 3 -\
 				 r_cb2body / nt.norm( r_cb2body ) ** 3 )
+
+			#calc attitude effect
+			_r = _q.rotatePoint(r_sc2body) #rotate position vector to the body axis frame
+			norm_r = nt.norm( _r )
+
+			mult = np.matmul(self.config[ 'inertia0' ], _r)
+			cross = np.cross(_r, mult)
+			T = 3*self.cb[ 'mu' ]/(norm_r**5) * cross 
+
+			alpha += np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), T)
 		return (a, np.zeros(3))
 
 	def calc_J2( self, et, state ): #TODO: attitude effect?
