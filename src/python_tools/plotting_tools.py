@@ -11,6 +11,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tinyQuaternion import Quaternion
+import progressbar
 plt.style.use( 'dark_background' )
 
 import cities_lat_long
@@ -1228,14 +1229,22 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 	frames = _args['frames']
 	#account for small amount of steps so there aren't too many frames
 	if frames == None or frames >max_steps:
-		print("changed frames to match steps")
+		print("\nchanged frames to match steps")
 		frames = max_steps
 
 	#generate all the frames
-	print("rendering frames")
+	print("\nrendering frames\n")
+
+	widgets = [' [',
+        	progressbar.Timer(format= 'Loading frames: %(elapsed)s'),
+        	'] ',
+            progressbar.Bar('*'),' (',
+            progressbar.ETA(), ') ',
+        ]
+	bar = progressbar.ProgressBar(max_value=frames, widgets=widgets).start()
+
 	for frame in range(frames):
 		try:
-			print(f'rendering frame: {frame+1} out of {frames}...')
 			max_val = 0
 			n       = 0
 			fig = plt.figure( figsize = _args[ 'figsize' ] )
@@ -1381,6 +1390,9 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 
 			plt.savefig(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )), dpi = _args[ 'dpi' ])
 			plt.close()
+		
+			bar.update(frame)
+
 		except KeyboardInterrupt:
 			frames = frame
 			break
@@ -1389,7 +1401,7 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 	from PIL import Image
 
 	images = [Image.open(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' ))) for frame in range(frames)]
-	print("frames have been created")
+	print("\nframes have been created")
 
 	print("rendering gif...")
 	#here you can also edit the speed of animation

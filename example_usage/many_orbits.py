@@ -58,5 +58,5 @@ if __name__ == '__main__':
 	vs = [ sc.states[ :, 3:6 ] for sc in scs ]
 	quats = [ sc.states[ :, 6:10 ] for sc in scs ]
 	times = scs[0].ets - len(scs[0].ets) * [scs[0].ets[0]] #TODO: try to break it
-	#shape = (sc_amount, amount of simulated points, amount oflogged values)
+	#shape = (sc_amount, amount of simulated points, logged values)
 	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'show': False, 'ani_name': 'mult_orbit.gif', 'lb_axes': False, 'or_axes': True })

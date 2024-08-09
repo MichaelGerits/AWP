@@ -17,6 +17,7 @@ import spiceypy          as spice
 import numpy             as np
 import matplotlib.pyplot as plt
 from pyatmos import expo
+import progressbar
 
 from datetime import datetime
 plt.style.use( 'dark_background' )
@@ -154,7 +155,7 @@ class Spacecraft:
 				self.orbit_perts_funcs_map[ key ] )
 
 	def load_spice_kernels( self ):
-		print('LOADING SPICE KERNELS...')
+		print('\nLOADING SPICE KERNELS...\n')
 		spice.furnsh( sd.leapseconds_kernel )
 		spice.furnsh( sd.pck00010 )
 		spice.furnsh( sd.de432 )
@@ -326,7 +327,7 @@ class Spacecraft:
 		
 		return (np.zeros(3), alpha)
 	
-	def calc_solar_press(self, et,  state):
+	def calc_solar_press(self, et,  state): #TODO: speed up
 		r = state[:3] 
 		mass = state[13]
 		q = Quaternion(q=state[6:10])
@@ -396,10 +397,20 @@ class Spacecraft:
 		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(q, w_matrix)) #q dot
 		state_dot[ 10:13 ] = alpha_g - np.matmul(np.cross(w, H), np.linalg.inv(inertiaTens)) #consider rotational dynamics
 		state_dot[ 13 ] = mass_dot
+
+		self.bar.update((et - self.et0)/(10*self.config['dt']))
+
 		return state_dot
 
 	def propagate_orbit( self ):
-		print( 'Propagating orbit..' )
+		#sets a format for the loading bar
+		self.widgets = [' [',
+        	progressbar.Timer(format= 'Propagating Orbit: %(elapsed)s'),
+        	'] ',
+            progressbar.Bar('*'),' (',
+            progressbar.ETA(), ') ',
+        ]
+		self.bar = progressbar.ProgressBar(max_value=self.config['tspan']/(10*self.config['dt']), widgets=self.widgets).start()
 
 		self.ode_sol = solve_ivp(
 			t_eval		 = np.arange(self.et0, self.et0 + self.config['tspan'], self.config[ 'dt']), #desides at which timesteps the values should be stored
@@ -418,13 +429,13 @@ class Spacecraft:
 		self.n_steps = self.states.shape[ 0 ]
 
 	def calc_altitudes( self ):
-		print('Calculating Altitudes...')
+		print('\nCalculating Altitudes...')
 		self.altitudes = np.linalg.norm( self.states[ :, :3 ], axis = 1 ) -\
 						self.cb[ 'radius' ]
 		self.altitudes_calculated = True
 	
 	def calc_coes( self ):
-		print( 'Calculating COEs..' )
+		print( '\nCalculating COEs..' )
 		self.coes = np.zeros( ( self.n_steps, 6 ) )
 
 		for n in range( self.n_steps ):
@@ -446,7 +457,7 @@ class Spacecraft:
 		'''
 		calculates the directional angles between the body fixed frame and the direction of the sun in degrees
 		'''
-		print( 'Calculating sun directions..' )
+		print( '\nCalculating sun directions..' )
 		self.sun_dirs = np.zeros( ( self.n_steps, 3 ) )
 		axes = np.array([[1,0,0],
 							  		[0,1,0],
@@ -467,7 +478,7 @@ class Spacecraft:
 		self.sun_dirs_calculated = True
 	
 	def calc_apoapses_periapses( self ):
-		print("Calculating rp and ap....")
+		print("\nCalculating rp and ap....")
 		if not self.coes_calculated:
 			self.calc_coes()
 
@@ -477,7 +488,7 @@ class Spacecraft:
 		self.ra_rp_calculated = True
 
 	def calc_latlons( self ):
-		print("Calculating lattitudes and longitudes...")
+		print("\nCalculating lattitudes and longitudes...")
 		#reason we change the frame here is to account for the earth's rotation
 		self.latlons = nt.cart2lat( self.states[ :, :3 ],
 			self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], self.ets )
