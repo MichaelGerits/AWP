@@ -594,9 +594,9 @@ def plot_coes( ets, coes, args= {} ):
 	_args[ 'xlabel' ]     = time_handler[ _args[ 'time_unit' ] ][ 'xlabel' ]
 	_args[ 'time_coeff' ] = time_handler[ _args[ 'time_unit' ] ][ 'coeff'  ]
 
-	ts  = ets * _args[ 'time_coeff' ]
-	ts -= ts[ 0 ]
-
+	ts   = ets.copy() - ets[ 0 ]
+	ts  /= _args['time_coeff']
+	
 	fig,( ( ax0, ax1, ax2 ),( ax3, ax4, ax5 ) ) = plt.subplots( 2, 3,
 		figsize = _args[ 'figsize' ] )
 	fig.suptitle( _args[ 'title' ], fontsize = _args[ 'title_fs' ] )

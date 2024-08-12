@@ -225,9 +225,8 @@ class Spacecraft:
 		tx     = state[ 0 ] / norm_r * ( 5 * z2 / r2 - 1 )
 		ty     = state[ 1 ] / norm_r * ( 5 * z2 / r2 - 1 )
 		tz     = state[ 2 ] / norm_r * ( 5 * z2 / r2 - 3 )
-		return (1.5 * self.cb[ 'J2' ] * self.cb[ 'mu' ] *\
-			   self.cb[ 'radius' ] ** 2 \
-			 / r2 ** 2 * np.array( [ tx, ty, tz ] ), np.zeros(3))
+		return (1.5 * self.cb[ 'J2' ] * self.cb[ 'mu' ] * self.cb[ 'radius' ] ** 2 / r2 ** 2 * np.array( [ tx, ty, tz ] ), 
+		  		np.zeros(3))
 
 	def calc_grav_gradient( self, et, state):
 		'''
@@ -336,14 +335,13 @@ class Spacecraft:
 		r_cb2body  = spice.spkgps( pd.sun[ 'SPICE_ID' ], et, self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
 		r_body2sc = -(r_cb2body - r)
 		d_sun = nt.norm(r_body2sc)
-		sun_dir = nt.normed(r_body2sc)
 
 		ref = self.config['orbit_perts']['solar_press']['ref'] #reflectivity
 		A = self.config['orbit_perts']['solar_press']['A'] #area
 		G1=1e8 #constant (kg * km^3/ (s^2 * m^2))
 		Cp = self.config['solarPress_Cp'] #body position of centre of pressure
 
-		F = (1+ref)*G1*A/(d_sun**2)*sun_dir
+		F = (1+ref)*G1*A/(d_sun**3)*r_body2sc
 		torque = np.cross(Cp, _q.rotatePoint(F*1000)) #rotate to body frame and multiply by 1000 to go to SI units (Nm)
 
 		a = F/mass #km/s^2
@@ -368,8 +366,7 @@ class Spacecraft:
 		_q = Quaternion(q=np.array([q0, q1, q2, q3]))
 		a_b = Force/ mass / 1000 #convert to km/s^2
 		a_g = _q.rotatePoint(a_b) #total acceleration is in inertial frame, so we convert
-		alpha_b = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
-		alpha_g = alpha_b #the rotation is already in the body axis 
+		alpha = np.matmul(np.linalg.inv(inertiaTens), np.transpose(Torque))
 
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
@@ -380,7 +377,9 @@ class Spacecraft:
 		for pert in self.orbit_perts_funcs:
 			effect = pert( et, state )
 			a += effect[0]
-			alpha_g += effect[1]
+			alpha += effect[1]
+
+			#print(effect)
 				
 
 		#the angular rate matrix to get the dot of the position quaternion
@@ -395,10 +394,10 @@ class Spacecraft:
 		state_dot[ :3  ] = v #r dot
 		state_dot[ 3:6 ] = a #v dot
 		state_dot[ 6:10 ] = np.transpose(0.5 * np.dot(q, w_matrix)) #q dot
-		state_dot[ 10:13 ] = alpha_g - np.matmul(np.cross(w, H), np.linalg.inv(inertiaTens)) #consider rotational dynamics
+		state_dot[ 10:13 ] = alpha - np.matmul(np.cross(w, H), np.linalg.inv(inertiaTens)) #consider rotational dynamics
 		state_dot[ 13 ] = mass_dot
 
-		self.bar.update((et - self.et0)/(10*self.config['dt']))
+		self.bar.update((et - self.et0)/(self.config['dt']))
 
 		return state_dot
 
@@ -410,7 +409,7 @@ class Spacecraft:
             progressbar.Bar('*'),' (',
             progressbar.ETA(), ') ',
         ]
-		self.bar = progressbar.ProgressBar(max_value=self.config['tspan']/(10*self.config['dt']), widgets=self.widgets).start()
+		self.bar = progressbar.ProgressBar(max_value=(self.config['tspan']+1)/(self.config['dt']), widgets=self.widgets).start()
 
 		self.ode_sol = solve_ivp(
 			t_eval		 = np.arange(self.et0, self.et0 + self.config['tspan'], self.config[ 'dt']), #desides at which timesteps the values should be stored
@@ -453,7 +452,7 @@ class Spacecraft:
 		self.coes_rel        = self.coes[ : ] - self.coes[ 0, : ]
 		self.coes_calculated = True
 
-	def calc_sun_dirs( self ):
+	def calc_sun_dirs( self ): #TODO: check for correctness
 		'''
 		calculates the directional angles between the body fixed frame and the direction of the sun in degrees
 		'''
