@@ -148,6 +148,7 @@ sun = {
 	'mu'              : 1.3271244004193938E+11,
 	'radius'          : 695510.0,
 	'deorbit_altitude': 1.2 * 695510.0,
+	'G1'			  : 1e8, #constant (kg * km^3/ (s^2 * m^2))
 	'cmap'            :'gist_heat'
 }
 

@@ -596,7 +596,7 @@ def plot_coes( ets, coes, args= {} ):
 
 	ts   = ets.copy() - ets[ 0 ]
 	ts  /= _args['time_coeff']
-	
+
 	fig,( ( ax0, ax1, ax2 ),( ax3, ax4, ax5 ) ) = plt.subplots( 2, 3,
 		figsize = _args[ 'figsize' ] )
 	fig.suptitle( _args[ 'title' ], fontsize = _args[ 'title_fs' ] )
@@ -1315,7 +1315,7 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 
 					#b1 axis
 					b11, b12, b13 = b1_dir * l
-					ax.quiver( r1, r2, r3, b11, b12, b13, color = 'b', lw=2, hatch='O' )
+					ax.quiver( r1, r2, r3, b11, b12, b13, color = 'r', lw=2, hatch='O' )
 
 					#b2 axis
 					b21, b22, b23 = b2_dir * l
@@ -1323,7 +1323,7 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 
 					#b3 axis
 					b31, b32, b33 = b3_dir * l
-					ax.quiver( r1, r2, r3, b31, b32, b33, color = 'r', lw=2, hatch='O' )
+					ax.quiver( r1, r2, r3, b31, b32, b33, color = 'b', lw=2, hatch='O' )
 
 	#---	-----------------------------------------------------------------------------------------------------------
 			#plots the central body sphere
@@ -1394,6 +1394,7 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 			bar.update(frame)
 
 		except KeyboardInterrupt:
+			print(f"\n{frame}/{frames} frames have been created")
 			frames = frame
 			break
 			
@@ -1401,9 +1402,8 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 	from PIL import Image
 
 	images = [Image.open(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' ))) for frame in range(frames)]
-	print("\nframes have been created")
 
-	print("rendering gif...")
+	print("\nrendering gif...")
 	#here you can also edit the speed of animation
 	images[0].save(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'GIF', _args['ani_name'] )), save_all=True, append_images=images[1:], fps=_args['fps'], loop=10)
 	#emptying the frames folder

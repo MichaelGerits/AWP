@@ -326,25 +326,24 @@ class Spacecraft:
 		
 		return (np.zeros(3), alpha)
 	
-	def calc_solar_press(self, et,  state): #TODO: speed up
+	def calc_solar_press(self, et,  state): 
 		r = state[:3] 
 		mass = state[13]
+		
+		if oc.check_eclipse(et, r, self.config['cb'],self.config['frame']) != -1: #checks if it goes trough an eclipse
+			return(np.zeros(3), np.zeros(3))
+		
 		q = Quaternion(q=state[6:10])
 		_q = q.conjugate #rotation vector to vonvert to body axis
 
 		r_cb2body  = spice.spkgps( pd.sun[ 'SPICE_ID' ], et, self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
-		r_body2sc = -(r_cb2body - r)
+		r_body2sc = r - r_cb2body
 		d_sun = nt.norm(r_body2sc)
+		
 
-		ref = self.config['orbit_perts']['solar_press']['ref'] #reflectivity
-		A = self.config['orbit_perts']['solar_press']['A'] #area
-		G1=1e8 #constant (kg * km^3/ (s^2 * m^2))
-		Cp = self.config['solarPress_Cp'] #body position of centre of pressure
+		a = (1+self.config['orbit_perts']['solar_press']['ref'])*pd.sun['G1']*self.config['orbit_perts']['solar_press']['A']*1e-6/(d_sun**3)/mass*r_body2sc
+		torque = np.cross(self.config['solarPress_Cp'], _q.rotatePoint(1000*a*mass)) #rotate to body frame and multiply by 1000 to go to SI units (Nm)
 
-		F = (1+ref)*G1*A/(d_sun**3)*r_body2sc
-		torque = np.cross(Cp, _q.rotatePoint(F*1000)) #rotate to body frame and multiply by 1000 to go to SI units (Nm)
-
-		a = F/mass #km/s^2
 		alpha = np.matmul(np.linalg.inv(self.config['inertia0']), torque) #rad/s^2
 		return (a, alpha)
 	
@@ -452,23 +451,24 @@ class Spacecraft:
 		self.coes_rel        = self.coes[ : ] - self.coes[ 0, : ]
 		self.coes_calculated = True
 
-	def calc_sun_dirs( self ): #TODO: check for correctness
+	def calc_sun_dirs( self ):
 		'''
 		calculates the directional angles between the body fixed frame and the direction of the sun in degrees
 		'''
 		print( '\nCalculating sun directions..' )
-		self.sun_dirs = np.zeros( ( self.n_steps, 3 ) )
+		self.sun_dirs = np.zeros( ( self.n_steps, 3 ) ) #allocates the memory
 		axes = np.array([[1,0,0],
-							  		[0,1,0],
-									[0,0,1]])
+						 [0,1,0],  #defines the body axes
+						 [0,0,1]])
 
 		for n in range( self.n_steps ):
 			q = Quaternion(q=self.states[n, 6:10])
-			_q = q.conjugate #rotation vector to vonvert to body axis
+			_q = q.conjugate #rotation vector to convert to body axis
 
-			r_cb2body  = spice.spkgps( pd.sun[ 'SPICE_ID' ], self.ets[n], self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
-			r_body2sc = (r_cb2body - self.states[n, :3])
-			sun_dir = _q.rotatePoint(nt.normed(r_body2sc)) #TODO: check if the direction is correct
+			r_cb2sun  = spice.spkgps( pd.sun[ 'SPICE_ID' ], self.ets[n], self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
+			r_sc2sun = (r_cb2sun - self.states[n, :3])
+			sun_dir = _q.rotatePoint(nt.normed(r_sc2sun)) #TODO: check if the direction is correct
+
 			alpha = nt.vecs2angle(axes[0], sun_dir)
 			beta = nt.vecs2angle(axes[1], sun_dir)
 			gamma = nt.vecs2angle(axes[2], sun_dir)
