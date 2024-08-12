@@ -17,45 +17,49 @@ import plotting_tools as pt
 # 3rd party libraries
 import numpy as np
 
-aops   = np.arange( 0, 360, 10 )
-inc   = 60
-coes   = [ earth[ 'radius' ] + 1000, 0.0, 0.0, 0.0, 0.0, 0.0 ]
-scs    = []
-config = {
-	'tspan': '1',
-
-}
-
-print( len( aops ))
 max_steps = np.inf
 stp_index = 0
-if __name__ == '__main__':
-	for aop in aops:
-		coes[ 2 ] = inc
-		coes[ 5 ] = aop
-		config= {
-			'coes': coes,
-			'actuators'	 : [0., 0., 1e-3, 0.1e-6, 0.1e-6, -0.5e-6], #these arethe forces and torques that act with respect to the body axis
-			'mass0'		 : 100.,
-			'inertia0'	 : np.array([[100., 0., 0.],
-						   			 [0., 100., 0.], 
-									 [0., 0., 100.],]),
-			#Tspan is either the amount or seconds. 
-			#If it is a string,it is the amount of orbits
-			'tspan'      : '2', 
-			#this decides at which points the integrator stores points to be plotted
-			'dt' : 200,
-			'orbit_perts': { 'J2': True },
 
-		}
+coes = []
+scs = []
+coes.append( [ 26600, 0.74, 63.4, 0.0, 270, 0.0 ] )#Molniya orbit
+coes.append( [ 42164, 0.24, 63.4, 0.0, 270, 100 ] )#Tundra orbit
+coes.append( [ 42164.0, 0,  0.,  0, 0, 100 ] )#GEO orbit
+
+if __name__ == '__main__':
+	for i in coes: #itterates over all the spacecraft
+		config= {
+			'date0'		 : '2020-01-01',
+			'coes'       : i,
+			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these are the forces and torques that act with respect to the body axis
+			'mass0'		 : 100.,
+			'inertia0'	 : np.array([[0.1, 0., 0.],
+						   			 [0., 1., 0.], 
+									 [0., 0., 1.]]),
+			'drag_Cp'		 : np.array([-1., 0., 0.]), #position of the Cp's in the attitude body fixed frame
+			'solarPress_Cp'	 : np.array([-1., 0., 0.]),
+			'tspan'      : '2', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
+			'dt' : 50, #this decides at which points the integrator STORES points to be plotted
+			'orbit_perts': {'J2': True, 
+				   			#'n_bodies': [pd.moon, pd.jupiter, pd.saturn, pd.sun],
+							'grav_grad': True,
+							#'atmos_drag': {'CD': 2.2, 'A':10},
+							#'solar_press': {'ref': 1, 'A': 10}
+							}
+			}
 		sc = SC( config )
+		sc.calc_latlons()
 		if sc.n_steps < max_steps:
 			max_steps = sc.n_steps
+			times = sc.ets - (len(sc.ets) * [sc.et0])
 		scs.append( sc )
 
+	#shape = (sc_amount, amount of simulated points, logged values)
 	rs = [ sc.states[ :, :3 ] for sc in scs ]
 	vs = [ sc.states[ :, 3:6 ] for sc in scs ]
 	quats = [ sc.states[ :, 6:10 ] for sc in scs ]
-	times = scs[0].ets - (len(scs[0].ets) * [scs[0].ets[0]]) #TODO: try to break it
-	#shape = (sc_amount, amount of simulated points, logged values)
-	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'show': False, 'ani_name': 'mult_orbit.gif', 'lb_axes': False, 'or_axes': True })
+	latlons = [ sc.latlons for sc in scs]
+	
+	
+	pt.plot_groundtracks (latlons, args = {'show': True, 'grid': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ],})
+	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'ani_name': 'mult_orbit.gif', 'lb_axes': True, 'or_axes': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ] })

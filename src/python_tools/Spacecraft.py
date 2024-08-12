@@ -467,7 +467,7 @@ class Spacecraft:
 
 			r_cb2sun  = spice.spkgps( pd.sun[ 'SPICE_ID' ], self.ets[n], self.config[ 'frame' ], self.cb[ 'SPICE_ID' ] )[ 0 ] #get the vector form central body to sun
 			r_sc2sun = (r_cb2sun - self.states[n, :3])
-			sun_dir = _q.rotatePoint(nt.normed(r_sc2sun)) #TODO: check if the direction is correct
+			sun_dir = _q.rotatePoint(nt.normed(r_sc2sun)) 
 
 			alpha = nt.vecs2angle(axes[0], sun_dir)
 			beta = nt.vecs2angle(axes[1], sun_dir)
