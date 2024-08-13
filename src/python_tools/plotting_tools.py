@@ -447,7 +447,7 @@ def plot_states( ets, states, args ):
 	ax2.grid( linestyle = 'dotted' )
 	ax2.set_xlim( _args[ 'xlim'   ] )
 	ax2.set_ylim( _args[ 'q_ylim' ] )
-	ax2.set_ylabel( r'Attitude $(rad)$')
+	ax2.set_ylabel( r'Attitude $(-)$')
 
 	for hline in _args[ 'r_hlines' ]:
 		ax2.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],

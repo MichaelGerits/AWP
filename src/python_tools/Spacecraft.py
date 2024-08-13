@@ -44,6 +44,7 @@ def null_config():
 		'et0'            : None, #define the start ephemeris time (if no date)
 		'frame'          : 'J2000', #defines the inertial reference frame of the simulation
 		'dt'			 : 200, #defines the dt at which points are LOGGED
+		'tspan'			 : '1',
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan(deg)]
@@ -102,8 +103,10 @@ class Spacecraft:
 		self.eclipses_calculated  = False
 		self.sun_dirs_calculated  = False
 
+		#assigns specifics of the orbit integrator
 		self.assign_stop_condition_functions()
 		self.assign_orbit_perturbations_functions()
+		#loads the spice kernels from the spice_data.py file
 		self.load_spice_kernels()
 
 		if self.config[ 'propagate' ]:
@@ -147,7 +150,7 @@ class Spacecraft:
 
 	def assign_orbit_perturbations_functions( self ):
 	
-		self.orbit_perts_funcs_map = {
+		self.orbit_perts_funcs_map = { 
 			'J2'      : self.calc_J2,
 			'n_bodies': self.calc_n_bodies,
 			'grav_grad': self.calc_grav_gradient,
@@ -157,7 +160,7 @@ class Spacecraft:
 		}
 		self.orbit_perts_funcs = []
 
-		for key in self.config[ 'orbit_perts' ]:
+		for key in self.config[ 'orbit_perts' ]: #adds whichever perts were initialized to be computed
 			self.orbit_perts_funcs.append( 
 				self.orbit_perts_funcs_map[ key ] )
 

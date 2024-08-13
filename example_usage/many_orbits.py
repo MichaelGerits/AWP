@@ -38,8 +38,8 @@ if __name__ == '__main__':
 									 [0., 0., 1.]]),
 			'drag_Cp'		 : np.array([-1., 0., 0.]), #position of the Cp's in the attitude body fixed frame
 			'solarPress_Cp'	 : np.array([-1., 0., 0.]),
-			'tspan'      : '2', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
-			'dt' : 50, #this decides at which points the integrator STORES points to be plotted
+			'tspan'      : '1', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
+			'dt' : 500, #this decides at which points the integrator STORES points to be plotted
 			'orbit_perts': {'J2': True, 
 				   			#'n_bodies': [pd.moon, pd.jupiter, pd.saturn, pd.sun],
 							'grav_grad': True,
@@ -49,6 +49,7 @@ if __name__ == '__main__':
 			}
 		sc = SC( config )
 		sc.calc_latlons()
+		#checks for the orbit with the smalles amount of steps, so during animation, no errors are given
 		if sc.n_steps < max_steps:
 			max_steps = sc.n_steps
 			times = sc.ets - (len(sc.ets) * [sc.et0])
@@ -61,5 +62,6 @@ if __name__ == '__main__':
 	latlons = [ sc.latlons for sc in scs]
 	
 	
-	pt.plot_groundtracks (latlons, args = {'show': True, 'grid': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ],})
-	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'ani_name': 'mult_orbit.gif', 'lb_axes': True, 'or_axes': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ] })
+	#pt.plot_groundtracks (latlons, args = {'show': True, 'grid': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ],})
+	pt.plot_orbits(rs, {'show': True, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ]})
+	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'ani_name': 'mult_orbit.gif', 'lb_axes': True, 'or_axes': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ], 'frames': 200 })
