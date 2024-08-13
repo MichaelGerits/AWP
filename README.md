@@ -4,6 +4,7 @@ This is my variation of the AWP repository. The main goal of it was to add in at
 # AWP - Astrodynamics with Python
 
 ![prof-pic](docs/prof_pic_hq.png)
+![orbit-animation](docs/example_orbit.gif)
 ![cosmo-3d-launches](docs/cosmo-3d-launches.png)
 ![groundtracks-earth-img](docs/groundtracks-earth-img.png)
 
