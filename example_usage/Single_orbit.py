@@ -12,6 +12,7 @@ import spiceypy as spice
 
 
 #adding in a new path for the custom files to work too
+#make sure to change this when running your own files
 path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
 
 # AWP libraries

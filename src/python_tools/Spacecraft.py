@@ -34,12 +34,16 @@ import spice_data         as sd
 from tinyQuaternion import Quaternion
 
 def null_config():
+	'''
+	this function defines a "base" configuration for the spacecraft class 
+	such that not all parameters have to be specified every time
+	'''
 	return {
-		'cb'             : pd.earth,
-		'date0'          : '2020-04-01',
-		'et0'            : None,
-		'frame'          : 'J2000',
-		'dt'			 : 200,
+		'cb'             : pd.earth, #defines the central body
+		'date0'          : '2020-04-01', #defines the start date
+		'et0'            : None, #define the start ephemeris time (if no date)
+		'frame'          : 'J2000', #defines the inertial reference frame of the simulation
+		'dt'			 : 200, #defines the dt at which points are LOGGED
 		'orbit_state'    : [], 	#orbit defined by position and velocity vector quaternion and angular velocity
 		'actuators'		 : [0., 0., 0., 0., 0., 0.], #implement a body axis centered linear and rotaional force
 		'coes'           : [], #[semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan(deg)]
@@ -50,14 +54,14 @@ def null_config():
 		'stop_conditions': {}, #list of condistions to stop propagations
 		'print_stop'     : True,
 		'dense_output'   : False,
-		'mass0'          : 1,
-		'inertia0'		 : np.array([[1., 0., 0.],
+		'mass0'          : 1, #initial mass
+		'inertia0'		 : np.array([[1., 0., 0.], #moment of inertia tensor
 						   			 [0., 1., 0.], 
 									 [0., 0., 1.],]),
-		'drag_Cp'		 : np.zeros(3),
-		'solarPress_Cp'	 : np.zeros(3),
+		'drag_Cp'		 : np.zeros(3), #position of centre of pressure relative to body fixed axes
+		'solarPress_Cp'	 : np.zeros(3), #position of centre of pressure relative to body fixed axes
 		'output_dir'     : '.',
-		'propagate'      : True
+		'propagate'      : True #bool for propagation on initialisation
 	}
 
 class Spacecraft:
