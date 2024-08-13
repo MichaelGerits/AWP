@@ -27,8 +27,8 @@ def esc_v( r, mu = pd.earth[ 'mu' ] ):
 	Calculate escape velocity at given radial distance from body
 	'''
 	return math.sqrt( 2 * mu / r )
- 
-def state2coes( state, args = {} ):
+
+def state2coes( state, args ):
 	_args = {
 		'et'        : 0,
 		'mu'        : pd.earth[ 'mu' ],
@@ -38,8 +38,11 @@ def state2coes( state, args = {} ):
 	for key in args.keys():
 		_args[ key ] = args[ key ]
 
+	#gets rid of the strided array problem
+	rx,ry,rz,vx,vy,vz = state
+
 	rp,e,i,raan,aop,ma,t0,mu,ta,a,T = spice.oscltx( 
-		state, _args[ 'et' ], _args[ 'mu' ] )
+		[rx, ry, rz, vx, vy, vz], _args[ 'et' ], _args[ 'mu' ] )
 
 	if _args[ 'deg' ]:
 		i    *= nt.r2d
