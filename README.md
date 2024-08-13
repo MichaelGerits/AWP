@@ -1,3 +1,6 @@
+## Introduction
+This is my variation of the AWP repository. The main goal of it was to add in attitude dynamics and a few more pertubations (mostly for LEO orbit). Besides that i also added comments in the code trying to explain what everything does, added a feature to animate the 3d orbit, and fixed a few bugs and flaws that occured on my machine.
+
 # AWP - Astrodynamics with Python
 
 ![prof-pic](docs/prof_pic_hq.png)
@@ -23,6 +26,11 @@ The GitHub repository corresponding to the YouTube channel (https://www.youtube.
 * [Matplotlib](https://matplotlib.org/stable/index.html)
 * [SpiceyPy (SPICE Python Wrapper)](https://spiceypy.readthedocs.io/en/main/)
 * [pytest](https://docs.pytest.org/en/6.2.x/)
+* [pyAtmos](https://pypi.org/project/pyatmos/)
+* [tinyQuaternion](https://pypi.org/project/tinyQuaternion/)
+* [progressbar](https://pypi.org/project/progressbar/)
+* [ppigrf](https://pypi.org/project/ppigrf/)
+* [warnings](https://pypi.org/project/warnings/)
 
 ### Installing Python dependencies
 Python packages can be easily and conviniently installed using `pip` via the command line like so:
@@ -50,6 +58,14 @@ $ export PYTHONPATH=$PYTHONPATH:~/AWP/src/python_tools
 rem Examples of how to set the PYTHONPATH variable for Windows
 
 $ set PYTHONPATH=C:\Users\alfon\AWP\src\python_tools
+```
+
+additionally you can add the path in your code itself
+```py
+from sys import path
+
+#make sure to change this when running your own files
+path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
 ```
 
 For convenience, this command can be placed in a .bash_profile or .bashrc file and thus will be automatically set anytime a new terminal session is begun.
