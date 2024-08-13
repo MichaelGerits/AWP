@@ -27,12 +27,8 @@ def esc_v( r, mu = pd.earth[ 'mu' ] ):
 	Calculate escape velocity at given radial distance from body
 	'''
 	return math.sqrt( 2 * mu / r )
- 
 
-def state2coes( state, args = {} ):
-	'''
-	convert the orbital state to orbital coeff
-	'''
+def state2coes( state, args ):
 	_args = {
 		'et'        : 0,
 		'mu'        : pd.earth[ 'mu' ],
@@ -42,8 +38,11 @@ def state2coes( state, args = {} ):
 	for key in args.keys():
 		_args[ key ] = args[ key ]
 
+	#gets rid of the strided array problem
+	rx,ry,rz,vx,vy,vz = state
+
 	rp,e,i,raan,aop,ma,t0,mu,ta,a,T = spice.oscltx( 
-		state, _args[ 'et' ], _args[ 'mu' ] )
+		[rx, ry, rz, vx, vy, vz], _args[ 'et' ], _args[ 'mu' ] )
 
 	if _args[ 'deg' ]:
 		i    *= nt.r2d
@@ -63,9 +62,7 @@ def state2coes( state, args = {} ):
 	return [ a, e, i, ta, aop, raan ]
 
 def state2period( state, mu = pd.earth['mu'] ):
-	'''
-	calculates the period of an orbit
-	'''
+
 	# specific mechanical energy
 	epsilon = nt.norm( state[ 3:6 ] ) ** 2 / 2.0 - mu / nt.norm( state[ :3 ] )
 
@@ -76,9 +73,6 @@ def state2period( state, mu = pd.earth['mu'] ):
 	return 2 * math.pi * math.sqrt( a ** 3 / mu )
 
 def coes2state( coes, mu = pd.earth[ 'mu' ], deg = True ):
-	'''
-	turns orbit coefficients into an orbital state
-	'''
 	a, e, i, ta, aop, raan = coes
 	if deg:
 		i    *= nt.d2r
@@ -91,9 +85,6 @@ def coes2state( coes, mu = pd.earth[ 'mu' ], deg = True ):
 	return spice.conics( [ rp, e, i, raan, aop, ta, 0, mu], 0 )
 
 def state2ap( state, mu = pd.earth[ 'mu' ] ):
-	'''
-	gets the apoapsis and periapsis
-	'''
 	h       = nt.norm( np.cross( state[ :3 ], state[ 3: ] ) )
 	epsilon = nt.norm( state[ 3: ] ) ** 2 / 2.0 - mu / nt.norm( state[ :3 ] )
 	e       = math.sqrt( 2 * epsilon * h ** 2 / mu ** 2 + 1 )
@@ -103,9 +94,6 @@ def state2ap( state, mu = pd.earth[ 'mu' ] ):
 	return  ra, rp
 
 def two_body_ode( t, state, mu = pd.earth[ 'mu' ] ):
-	'''
-	returns an array of the time derivative used to solve the ODE
-	'''
 	# state = [ rx, ry, rz, vx, vy, vz ]
 
 	r = state[ :3 ]

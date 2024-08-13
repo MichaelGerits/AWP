@@ -30,9 +30,10 @@ earth = {
 		'spice_name'      : 'EARTH',
 		'SPICE_ID'        : 399,
 		'mass'            : 5.972e24,
-		'mu'              : 5.972e24 * G,
-		'radius'          : 6378.0,
+		'mu'              : 5.972e24 * G, #km^3/s^2
+		'radius'          : 6378.0, #km
 		'J2'              : 1.081874e-3,
+		'atm_rotation_vec': [0., 0., 72.9211e-6], #rad/s
 		'sma'             : 149.596e6, # km
 		'SOI'             : 926006.6608, # km
 		'deorbit_altitude': 100.0, # km
@@ -147,6 +148,7 @@ sun = {
 	'mu'              : 1.3271244004193938E+11,
 	'radius'          : 695510.0,
 	'deorbit_altitude': 1.2 * 695510.0,
+	'G1'			  : 1e8, #constant (kg * km^3/ (s^2 * m^2))
 	'cmap'            :'gist_heat'
 }
 

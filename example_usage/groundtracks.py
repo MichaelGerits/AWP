@@ -7,10 +7,12 @@ Propagate orbits with Spacecraft class and plot resulting
 groundtracks
 '''
 
+
 # 3rd party libraries
 from numpy import arange
 import spiceypy as spice
 from sys import path
+
 #adding in a new path for the custom files to work too
 path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\src\\python_tools")
 

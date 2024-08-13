@@ -68,7 +68,7 @@ city_list0 = [
 ]
 
 def city_dict():
-	with open( WORLD_CITIES_FILE, 'r', encoding="utf8" ) as f:
+	with open( WORLD_CITIES_FILE, 'r', encoding='utf-8' ) as f:
 		lines = f.readlines()
 
 	header = lines[ 0 ]
