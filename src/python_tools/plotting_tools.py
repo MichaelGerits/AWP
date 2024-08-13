@@ -785,7 +785,7 @@ def plot_groundtracks( coords, args ):
 			color = _args[ 'colors' ][ n ],
 			markersize = _args[ 'markersize' ] )
 
-	# TODO save this as a .json
+	
 	cities = cities_lat_long.city_dict()
 	n      = 0
 
@@ -1207,7 +1207,7 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 		'cb_cmap'      : 'Blues',
 		'cb_axes_color': 'w',
 		'axes_mag'     : 0.8,
-		'title'        : 'Trajectories',
+		'title'        : '3d Orbits',
 		'legend'       : False,
 		'showTime'	   : True,
 		'axes_no_fill' : True,

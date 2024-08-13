@@ -18,6 +18,9 @@ import numpy             as np
 import matplotlib.pyplot as plt
 from pyatmos import expo
 import progressbar
+import ppigrf
+import warnings
+
 
 from datetime import datetime
 plt.style.use( 'dark_background' )
@@ -287,7 +290,7 @@ class Spacecraft:
 
 		return (a, alpha)
 	
-	def calc_mag_torque(self, et, state): #TODO: Find better way to find magnetic field (does not work)
+	def calc_mag_torque(self, et, state): #TODO: speed up
 		r = state[:3]
 		q = Quaternion(q=state[6:10]) 
 		D = self.config['orbit_perts']['mag_torque']['di_moment']
@@ -295,32 +298,32 @@ class Spacecraft:
 
 		#gets the longitude, lattitude and the radius
 		rad, lon, lat = nt.cart2lat( np.array([r]),self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], np.array([et]))[0]
-		print(lat)
 		alt = rad-self.cb['radius']
 
 		date = spice.et2utc(et, format_str='ISOC', prec=0).replace('T', ' ')[:10].split('-')
 		date = datetime(int(date[0]), int(date[1]), int(date[2]))
 
-		Be, Bn, Bu = None #TODO:Find a way to calculate the magnetic field at a certain position
+		with warnings.catch_warnings(action="ignore"): #gets the magnetic field
+			#TODO:Newer magnetic field model will be needed due to deprecated function
+			Be, Bn, Bu = ppigrf.igrf(lon, lat, alt, date) 
+		ENU_vec = np.array([Be[0,0], Bn[0,0], Bu[0,0]])*1e-9
 
-		#gets the ENU frame vector of the field
-		mag_ENU = np.array([Be[0,0], Bn[0,0], Bu[0,0]])
+		lon_rad = lon*nt.r2d
+		lat_rad = lat*nt.r2d
 
-		R = np.array([[-np.sin(lon)            , np.cos(lon)             , 0          ],
-					  [-np.sin(lat)*np.cos(lon), -np.sin(lat)*np.sin(lon), np.cos(lat)],
-					  [np.cos(lat)*np.cos(lon) , np.cos(lat)*np.sin(lon) , np.sin(lat)]])
+		R = np.array([
+    				 [-np.sin(lon_rad),                	  np.cos(lon_rad),                	  0				 ], 
+    				 [-np.sin(lat_rad) * np.cos(lon_rad), -np.sin(lat_rad) * np.sin(lon_rad), np.cos(lat_rad)],
+    				 [np.cos(lat_rad) * np.cos(lon_rad),  np.cos(lat_rad) * np.sin(lon_rad),  np.sin(lat_rad)]
+					 ])
 		
-		mag_IAU = np.matmul(R, mag_ENU)
+		IAU_vec = np.matmul(R, ENU_vec) #transforms the ENU vec to IAU vector
 
-		if np.shape(mag_IAU) == 0:
-			print('no magnetic field found, try changing the date before 2025')
-			exit()
+		J200_vec = nt.frame_transform(np.array([IAU_vec]), self.cb[ 'body_fixed_frame' ], self.config[ 'frame' ], np.array([et]))[0] #tranforms to the J200 inertial frame
 
-		mag_Inert = nt.frame_transform(np.array([mag_IAU]), self.cb[ 'body_fixed_frame' ], self.config[ 'frame' ], np.array([et]))[0]
+		body_vec = q.rotatePoint(J200_vec) #transforms to the body frame
 
-		mag_body = q.rotatePoint(mag_Inert)
-
-		Torque = np.cross(D, mag_body)
+		Torque = np.cross(D, body_vec)
 
 		alpha = np.matmul(np.linalg.inv(self.config[ 'inertia0' ]), Torque)
 		
@@ -370,7 +373,7 @@ class Spacecraft:
 		mass_dot  = 0.0 #time derivative of the mass
 		state_dot = np.zeros( 14 )
 
-		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2 #TODO:add axact gravity acceleration model
+		a = -r * self.cb[ 'mu' ] / nt.norm( r ) ** 3 + a_g #km/s^2 
 		
 		#add up all the pertubation effects
 		for pert in self.orbit_perts_funcs:

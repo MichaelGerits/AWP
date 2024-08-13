@@ -15,5 +15,5 @@ base_dir = os.path.join(
 
 leapseconds_kernel = os.path.join( base_dir, 'lsk/naif0012.tls' ) #kernel for the leapseconds for ephemeris time
 de432              = os.path.join( base_dir, 'spk/de432s.bsp'   ) #kernel for the ephemeris positions of the barycentre of diff bodies
-pck00010           = os.path.join( base_dir, 'pck/pck00010.tpc' ) #kernel to caculate the latlon positions on earth
+pck00010           = os.path.join( base_dir, 'pck/pck00010.tpc' ) #kernel for planetary constants
 
