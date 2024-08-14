@@ -47,8 +47,8 @@ if __name__ == '__main__':
 							#'solar_press': {'ref': 1, 'A': 10}
 							}
 			}
-		sc = SC( config )
-		sc.calc_latlons()
+		sc = SC( config ) #initializes the spacecraft
+		sc.calc_latlons() #calculates the longitude and lattitude positions
 		#checks for the orbit with the smalles amount of steps, so during animation, no errors are given
 		if sc.n_steps < max_steps:
 			max_steps = sc.n_steps
@@ -59,9 +59,9 @@ if __name__ == '__main__':
 	rs = [ sc.states[ :, :3 ] for sc in scs ]
 	vs = [ sc.states[ :, 3:6 ] for sc in scs ]
 	quats = [ sc.states[ :, 6:10 ] for sc in scs ]
-	latlons = [ sc.latlons for sc in scs]
+	latlons = [ sc.latlons for sc in scs ]
 	
 	
 	#pt.plot_groundtracks (latlons, args = {'show': True, 'grid': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ],})
 	pt.plot_orbits(rs, {'show': True, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ]})
-	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'ani_name': 'mult_orbit.gif', 'lb_axes': True, 'or_axes': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ], 'frames': 200 })
+	pt.animate_orbits( max_steps, rs, vs, quats, times, args = { 'ani_name': 'mult_orbit.gif', 'lb_axes': True, 'or_axes': False, 'labels': [ 'Molniya', 'Tundra', 'Geosynchronous' ], 'frames': None })

@@ -64,8 +64,8 @@ if __name__ == '__main__':
 	sc.plot_sun_dirs(args = {'show': True, 'time_unit': 'days'})
 	sc.plot_eclipse_array(args = {'show': True, 'time_unit': 'days'})
 	sc.plot_altitudes()
-	#sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
-	#sc.plot_3d(ani = True,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
+	sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
+	sc.plot_3d(ani = True,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
 	
 
 
