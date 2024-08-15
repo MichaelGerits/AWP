@@ -53,9 +53,9 @@ if __name__ == '__main__':
 			'dt' : 50, #this decides at which points the integrator STORES points to be plotted
 			'orbit_perts': {#'J2': True, 
 				   			#'n_bodies': [pd.moon, pd.sun, pd.jupiter, pd.saturn ],
-							#'grav_grad': True,
+							'grav_grad': True,
 							#'atmos_drag': {'CD': 2.2, 'A':10},
-							#'solar_press': {'ref': 1, 'A': 10},
+							'solar_press': {'ref': 1, 'A': 10},
 							#'mag_torque':{'di_moment': np.array([1., 0., 0.])}
 							}
 			} )
