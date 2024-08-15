@@ -7,6 +7,7 @@ Plotting Tools Library
 
 from copy import copy
 import os
+import math as m
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,6 +16,7 @@ import progressbar
 plt.style.use( 'dark_background' )
 
 import cities_lat_long
+import numerical_tools as nt
 
 time_handler = {
 	'seconds': { 'coeff': 1.0,        'xlabel': 'Time (seconds)' },
@@ -354,7 +356,7 @@ def plot_states( ets, states, args ):
 		'xlim'         : None,
 		'r_ylim'       : None,
 		'v_ylim'       : None,
-		'q_ylim'	   : None,
+		'e_ylim'	   : None,
 		'w_ylim'	   : None,
 		'legend'       : True,
 		'show'         : False,
@@ -371,32 +373,48 @@ def plot_states( ets, states, args ):
 	_args[ 'time_coeff' ] = time_handler[ _args[ 'time_unit' ] ][ 'coeff' ]
 	ts     = ets[:] - ets[0]
 	ts    /= _args[ 'time_coeff' ]
-	rnorms = np.linalg.norm( states[ :, :3 ], axis = 1 )
-	vnorms = np.linalg.norm( states[ :, 3:6 ], axis = 1 )
-	qnorms = np.linalg.norm( states[ :, 6:10 ], axis = 1 )
-	wnorms = np.linalg.norm( states[ :, 10:13 ], axis = 1 )
+
+	rs=states[:,:3]
+	vs=states[:,3:6]
+	ws=states[:,10:13] * nt.r2d
+	quats=states[:,6:10]
+
+	eulangs = np.zeros((len(ts),3))
+	#convert quats to euler angles (3-2-1 sequance)
+	for n in range(np.shape(quats)[0]):
+		q0, q1, q2, q3 = quats[n]
+		eulangs[n] = np.array([m.atan2(2*(q0*q1 + q2*q3), 1-2*(q1**2 + q2**2)),
+							  -np.pi/2 + 2*m.atan2(m.sqrt(1 + 2*(q0*q2 - q1*q3)), m.sqrt(1 - 2*(q0*q2 - q1*q3))),
+							  m.atan2(2*(q0*q3 + q1*q2), 1-2*(q2**2 + q3**2))])
+
+	eulangs = eulangs*nt.r2d
+
+	rnorms = np.linalg.norm( rs, axis = 1 )
+	vnorms = np.linalg.norm( vs, axis = 1 )
+	enorms = np.linalg.norm( eulangs, axis = 1 )
+	wnorms = np.linalg.norm( ws, axis = 1 )
 
 	if _args[ 'xlim' ] is None:
 		_args[ 'xlim' ] = [ 0, ts[ -1 ] ]
 
 	if _args[ 'r_ylim' ] is None:
-		_args[ 'r_ylim' ] = [ (states[ :, :3 ].min() - rnorms.max()*0.05) * 1.1, (rnorms.max()) * 1.1 ]
+		_args[ 'r_ylim' ] = [ (rs.min() - rnorms.max()*0.05) * 1.1, (rnorms.max()) * 1.1 ]
 
 	if _args[ 'v_ylim' ] is None:
-		_args[ 'v_ylim' ] = [ (states[ :, 3:6 ].min() - vnorms.max()*0.05) * 1.1, (vnorms.max()) * 1.1 ]
+		_args[ 'v_ylim' ] = [ (vs.min() - vnorms.max()*0.05) * 1.1, (vnorms.max()) * 1.1 ]
 
-	if _args[ 'q_ylim' ] is None:
-		_args[ 'q_ylim' ] = [ (states[ :, 6:10 ].min() - qnorms.max()*0.05) * 1.1, (qnorms.max()) * 1.1 ]
+	if _args[ 'e_ylim' ] is None:
+		_args[ 'e_ylim' ] = [ (eulangs.min() - enorms.max()*0.05) * 1.1, (enorms.max()) * 1.1 ]
 
 	if _args[ 'w_ylim' ] is None:
-		_args[ 'w_ylim' ] = [ (states[ :, 10:13 ].min() - wnorms.max()*0.05) * 1.1, (wnorms.max()) * 1.1 ]
+		_args[ 'w_ylim' ] = [ (ws.min() - wnorms.max()*0.05) * 1.1, (wnorms.max()) * 1.1 ]
 
 	''' Positions '''
-	ax0.plot( ts, states[ :, 0 ], 'r', label = r'$r_x$',
+	ax0.plot( ts, rs[:, 0], 'r', label = r'$r_x$',
 		linewidth = _args[ 'lw' ] )
-	ax0.plot( ts, states[ :, 1 ], 'g', label = r'$r_y$',
+	ax0.plot( ts, rs[:, 1], 'g', label = r'$r_y$',
 		linewidth = _args[ 'lw' ] )
-	ax0.plot( ts, states[ :, 2 ], 'b', label = r'$r_z$',
+	ax0.plot( ts, rs[:, 2], 'b', label = r'$r_z$',
 		linewidth = _args[ 'lw' ] )
 	ax0.plot( ts, rnorms        , 'm', label = r'$Norms$',
 		linewidth = _args[ 'lw' ] )
@@ -412,11 +430,11 @@ def plot_states( ets, states, args ):
 			linestyle = _args[ 'hline_lstyles' ] )
 
 	''' Velocities '''
-	ax1.plot( ts, states[ :, 3 ], 'r', label = r'$v_x$',
+	ax1.plot( ts, vs[:, 0], 'r', label = r'$v_x$',
 		linewidth = _args[ 'lw' ] )
-	ax1.plot( ts, states[ :, 4 ], 'g', label = r'$v_y$',
+	ax1.plot( ts, vs[:, 1], 'g', label = r'$v_y$',
 		linewidth = _args[ 'lw' ] )
-	ax1.plot( ts, states[ :, 5 ], 'b', label = r'$v_z$',
+	ax1.plot( ts, vs[:, 2], 'b', label = r'$v_z$',
 		linewidth = _args[ 'lw' ] )
 	ax1.plot( ts, vnorms        , 'm', label = r'$Norms$',
 		linewidth = _args[ 'lw' ] )
@@ -432,22 +450,18 @@ def plot_states( ets, states, args ):
 			color     = hline[ 'color' ],
 			linestyle = _args[ 'hline_lstyles' ] )
 		
-	''' Quaternions '''
-	ax2.plot( ts, states[ :, 6 ], 'w', label = r'$q_0$',
+	''' Euler angles '''
+	ax2.plot( ts, eulangs[:, 0], 'r', label = r'$\phi$',
 		linewidth = _args[ 'lw' ] )
-	ax2.plot( ts, states[ :, 7 ], 'r', label = r'$q_1$',
+	ax2.plot( ts, eulangs[:, 1], 'g', label = r'$\theta$',
 		linewidth = _args[ 'lw' ] )
-	ax2.plot( ts, states[ :, 8 ], 'g', label = r'$q_2$',
-		linewidth = _args[ 'lw' ] )
-	ax2.plot( ts, states[ :, 9 ], 'b', label = r'$q_3$',
-		linewidth = _args[ 'lw' ] )
-	ax2.plot( ts, qnorms		, 'm', label = r'$Norm$',
+	ax2.plot( ts, eulangs[:, 2], 'b', label = r'$\psi$',
 		linewidth = _args[ 'lw' ] )
 
 	ax2.grid( linestyle = 'dotted' )
 	ax2.set_xlim( _args[ 'xlim'   ] )
-	ax2.set_ylim( _args[ 'q_ylim' ] )
-	ax2.set_ylabel( r'Attitude $(-)$')
+	ax2.set_ylim( _args[ 'e_ylim' ] )
+	ax2.set_ylabel( r'Attitude (3-2-1) $(°)$')
 
 	for hline in _args[ 'r_hlines' ]:
 		ax2.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],
@@ -455,11 +469,11 @@ def plot_states( ets, states, args ):
 			linestyle = _args[ 'hline_lstyles' ] )
 		
 	''' Angular Velocities '''
-	ax3.plot( ts, states[ :, 10 ], 'r', label = r'$\omega_x$',
+	ax3.plot( ts, ws[:, 0], 'r', label = r'$\omega_x$',
 		linewidth = _args[ 'lw' ] )
-	ax3.plot( ts, states[ :, 11 ], 'g', label = r'$\omega_y$',
+	ax3.plot( ts, ws[:, 1], 'g', label = r'$\omega_y$',
 		linewidth = _args[ 'lw' ] )
-	ax3.plot( ts, states[ :, 12 ], 'b', label = r'$\omega_z$',
+	ax3.plot( ts, ws[:, 2], 'b', label = r'$\omega_z$',
 		linewidth = _args[ 'lw' ] )
 	ax3.plot( ts, wnorms        , 'm', label = r'$Norms$',
 		linewidth = _args[ 'lw' ] )
@@ -467,7 +481,7 @@ def plot_states( ets, states, args ):
 	ax3.grid( linestyle = 'dotted' )
 	ax3.set_xlim( _args[ 'xlim'   ] )
 	ax3.set_ylim( _args[ 'w_ylim' ] )
-	ax3.set_ylabel( r'Angular Velocity $(\dfrac{rad}{s})$' )
+	ax3.set_ylabel( r'Angular Velocity $(\dfrac{°}{s})$' )
 	ax3.set_xlabel( _args[ 'xlabel' ] )
 
 	for hline in _args[ 'v_hlines' ]:

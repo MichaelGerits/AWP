@@ -4,6 +4,6 @@ spiceypy   >= 3.1.1
 pytest     >= 6.2.3
 pyatmos
 tinyQuaternion
-progressbar
+progressbar2
 ppigrf
 warnings
