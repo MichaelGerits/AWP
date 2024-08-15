@@ -29,7 +29,7 @@ The GitHub repository corresponding to the YouTube channel (https://www.youtube.
 * [pytest](https://docs.pytest.org/en/6.2.x/)
 * [pyAtmos](https://pypi.org/project/pyatmos/)
 * [tinyQuaternion](https://pypi.org/project/tinyQuaternion/)
-* [progressbar](https://pypi.org/project/progressbar/)
+* [progressbar2](https://pypi.org/project/progressbar2/)
 * [ppigrf](https://pypi.org/project/ppigrf/)
 * [warnings](https://pypi.org/project/warnings/)
 
