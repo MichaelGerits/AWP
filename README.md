@@ -1,6 +1,8 @@
 ## Introduction
 This is my variation of the AWP repository. The main goal of it was to add in attitude dynamics and a few more pertubations (mostly for LEO orbit). Besides that i also added comments in the code trying to explain what everything does, added a feature to animate the 3d orbit, added the option of tracking the sun direction relative to the spacecraft and fixed a few bugs and flaws that occured on my machine.
 
+A document with how the most importnant functions are implemented and calculated can be found in the "book" folder
+
 # AWP - Astrodynamics with Python
 
 ![prof-pic](docs/prof_pic_hq.png)
