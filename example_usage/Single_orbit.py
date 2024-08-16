@@ -30,15 +30,15 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan]
 	#state = state values are in unit km and km/s, rad and rad/s
 
-	coes = [ earth[ 'radius' ] + 5000, 0.3, 30, 0., 10., 20. ]
+	coes = [ pd.moon[ 'radius' ] + 500, 0., 30, 0., 10., 20. ]
 	#coes = [ earth[ 'radius' ] + 1260, 0., 100.7, 0., 0., 90. ] #sun synchronous orbit
 	#coes = [ 42164, 0.24, 63.4, 0.0, 270, 100 ] #Tundra orbit
 	#coes = [ 26600, 0.74, 63.4, 0.0, 270, 0.0 ] #Molniya orbit
-	state = [pd.earth[ 'radius' ] + 5000,  0., 0., 0.,  5.91874728, 0., np.cos(0), 0., 0., np.sin(0), 0., 0., 0.]
+	#state = [pd.moon[ 'radius' ] + 5000,  0., 0., 0.,  5.91874728, 0., np.cos(0), 0., 0., np.sin(0), 0., 0., 0.]
 	sc   = SC(
 			{
-			'cb' 		 : pd.earth,
-			'date0'		 : '2020-01-01',
+			'cb' 		 : pd.moon,
+			'date0'		 : '2019-01-21',
 			'coes'       : coes,
 			#'orbit_state': state,
 			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these are the forces and torques that act with respect to the body axis
@@ -52,19 +52,19 @@ if __name__ == '__main__':
 			'dt' : 100, #this decides at which points the integrator STORES points to be plotted
 			'orbit_perts': {#'J2': True, 
 				   			#'n_bodies': [pd.moon, pd.sun, pd.jupiter, pd.saturn ],
-							'grav_grad': True,
+							#'grav_grad': True,
 							#'atmos_drag': {'CD': 2.2, 'A':10},
-							'solar_press': {'ref': 1, 'A': 10},
+							#'solar_press': {'ref': 1, 'A': 10, 'eclipse_bodies': []},
 							#'mag_torque':{'di_moment': np.array([1., 0., 0.])}
 							}
 			} )
-	sc.plot_states(args = {'show': True, 'time_unit': 'hours'})
-	sc.plot_coes(args = {'show': True, 'time_unit': 'days'})
-	sc.plot_sun_dirs(args = {'show': True, 'time_unit': 'days'})
+	#sc.plot_states(args = {'show': True, 'time_unit': 'hours'})
+	#sc.plot_coes(args = {'show': True, 'time_unit': 'days'})
+	#sc.plot_sun_dirs(args = {'show': True, 'time_unit': 'days'})
 	sc.plot_eclipse_array(args = {'show': True, 'time_unit': 'days'})
-	sc.plot_altitudes()
-	sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
-	sc.plot_3d(ani = True,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
+	#sc.plot_altitudes()
+	#sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
+	#sc.plot_3d(ani = True,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
 	
 
 
