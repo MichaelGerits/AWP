@@ -169,7 +169,8 @@ class Spacecraft:
 		spice.furnsh( sd.leapseconds_kernel )
 		spice.furnsh( sd.pck00010 )
 		spice.furnsh( sd.de432 )
-		self.spice_kernels_loaded = [ sd.leapseconds_kernel, sd.de432, sd.pck00010 ]
+		spice.furnsh( sd.de421 )
+		self.spice_kernels_loaded = [ sd.leapseconds_kernel, sd.de432, sd.pck00010, sd.de421 ]
 
 		if self.config[ 'et0' ] is not None:
 			self.et0 = self.config[ 'et0' ]
@@ -340,7 +341,7 @@ class Spacecraft:
 		r = state[:3] 
 		mass = state[13]
 		
-		if oc.check_eclipse(et, r, self.config['cb'],self.config['frame']) != -1: #checks if it goes trough an eclipse
+		if oc.check_eclipse(et, r, self.config['cb'],self.config['orbit_perts']['solar_press']['eclipse_bodies'],  self.config['frame']) != -1: #checks if it goes trough an eclipse
 			return(np.zeros(3), np.zeros(3))
 		
 		q = Quaternion(q=state[6:10])
@@ -503,17 +504,15 @@ class Spacecraft:
 			self.config[ 'frame' ], self.cb[ 'body_fixed_frame' ], self.ets )
 		self.latlons_calculated = True
 
-	def calc_eclipses( self, method = 'either', v = False, vv = False ):
-		self.eclipse_array = oc.calc_eclipse_array(
-			self.ets, self.states[ :, :3 ],
-			self.cb, self.config[ 'frame'] )
+	def calc_eclipses( self, bodies=[], method = 'either', v = False, vv = False ):
+		self.eclipse_array = oc.calc_eclipse_array(self.ets, self.states[ :, :3 ], self.cb, bodies=bodies ,frame = self.config[ 'frame'] ) #TODO: add in multiple bodies
 		self.eclipses = oc.find_eclipses( self.ets, self.eclipse_array,
 			method, v, vv )
 		self.eclipses_calculated = True
 
-	def plot_eclipse_array( self, args = { 'show': True } ):
+	def plot_eclipse_array( self, bodies=[],args = { 'show': True } ):
 		if not self.eclipses_calculated:
-			self.calc_eclipses()
+			self.calc_eclipses(bodies=bodies)
 
 		pt.plot_eclipse_array( self.ets, self.eclipse_array, args )
 
