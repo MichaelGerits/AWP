@@ -222,7 +222,7 @@ def calc_solar_eclipse_latlons( ets, body0, body1, frame = 'J2000' ):
 	latlons  = []
 
 	for n in range( len( ets ) ):
-		eclipse = check_solar_eclipse(
+		eclipse = check_eclipse(
 			ets[ n ], body0, body1, frame )
 		if eclipse[ 0 ] == 2:
 			latlons.append( eclipse[ 1 ] )
