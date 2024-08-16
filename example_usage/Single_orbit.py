@@ -17,7 +17,6 @@ path.append("C:\\Users\\MichaelGerits\\SABInternship\\PythonProjectFiles\\AWP\\s
 
 # AWP libraries
 from Spacecraft import Spacecraft as SC
-from planetary_data import earth
 import spice_data as sd
 import plotting_tools as pt
 import numerical_tools as nt
@@ -31,17 +30,17 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan]
 	#state = state values are in unit km and km/s, rad and rad/s
 
-	#coes = [ earth[ 'radius' ] + 5000, 0.3, 30, 0., 10., 20. ]
+	coes = [ earth[ 'radius' ] + 5000, 0.3, 30, 0., 10., 20. ]
 	#coes = [ earth[ 'radius' ] + 1260, 0., 100.7, 0., 0., 90. ] #sun synchronous orbit
 	#coes = [ 42164, 0.24, 63.4, 0.0, 270, 100 ] #Tundra orbit
 	#coes = [ 26600, 0.74, 63.4, 0.0, 270, 0.0 ] #Molniya orbit
-	state = [earth[ 'radius' ] + 5000,  0., 0., 0.,  5.91874728, 0., np.cos(0), 0., 0., np.sin(0), 0., 0., 0.]
+	state = [pd.earth[ 'radius' ] + 5000,  0., 0., 0.,  5.91874728, 0., np.cos(0), 0., 0., np.sin(0), 0., 0., 0.]
 	sc   = SC(
 			{
-			'cb' 		 : earth,
+			'cb' 		 : pd.earth,
 			'date0'		 : '2020-01-01',
-			#'coes'       : coes,
-			'orbit_state': state,
+			'coes'       : coes,
+			#'orbit_state': state,
 			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these are the forces and torques that act with respect to the body axis
 			'mass0'		 : 100.,
 			'inertia0'	 : np.array([[1., 0., 0.],
@@ -50,7 +49,7 @@ if __name__ == '__main__':
 			'drag_Cp'		 : np.array([-1., 0., 0.]), #position of the Cp's in the attitude body fixed frame
 			'solarPress_Cp'	 : np.array([-1., 0., 0.]),
 			'tspan'      : '1', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
-			'dt' : 0.01, #this decides at which points the integrator STORES points to be plotted
+			'dt' : 100, #this decides at which points the integrator STORES points to be plotted
 			'orbit_perts': {#'J2': True, 
 				   			#'n_bodies': [pd.moon, pd.sun, pd.jupiter, pd.saturn ],
 							'grav_grad': True,
