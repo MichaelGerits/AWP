@@ -173,6 +173,7 @@ def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ):
 
 		if proj_scalar <= 0.0: #infront of the body
 			eclipse_states[i] = -1
+			continue
 
 		proj     = proj_scalar * s_hat
 		rej_norm = nt.norm( _r - proj )
@@ -180,11 +181,14 @@ def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ):
 		if r_body == 0: #check for the diffrent kinds of eclipses
 			if check_umbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
 				eclipse_states[i] = 2
+				continue
 			elif check_penumbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
 				eclipse_states[i] = 1
+				continue
 			else:
 				eclipse_states[i] = -1
-		print(eclipse_states)
+				continue
+		i+=1
 	return max(eclipse_states) #returns the highest eclipse state
 
 def check_solar_eclipse_latlons( et, body0, body1, frame = 'J2000' ):
