@@ -158,26 +158,34 @@ def vinfinity_match( planet0, planet1, v0_sc, et0, tof0, args = {} ):
 
 	return tof, v0_sc_depart, v1_sc_arrive
 
-def check_eclipse( et, r, body, frame = 'J2000', r_body = 0 ):
-	r_sun2body  = spice.spkpos(
-		str( body[ 'SPICE_ID' ] ), et, frame, 'LT', 'SUN' )[ 0 ]
-	delta_ps    = nt.norm( r_sun2body )
-	s_hat       = r_sun2body / delta_ps
-	proj_scalar = np.dot( r, s_hat )
+def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ): 
+	eclipse_states=(len(bodies)+1)*[0] #eclipse state relative to each body
+	i = 0
+	for body in bodies + [cb]: #go over all the asked bodies
+		r_body2cb = spice.spkpos(str( cb[ 'SPICE_ID' ] ), et, frame, 'LT', str( body[ 'SPICE_ID' ] ))[ 0 ]
+		r_sun2body  = spice.spkpos(str( body[ 'SPICE_ID' ] ), et, frame, 'LT', 'SUN' )[ 0 ]
+		
+		delta_ps    = nt.norm( r_sun2body )
+		s_hat       = r_sun2body / delta_ps #sun direction vector
+		
+		_r = r + r_body2cb #get the relative position vector
+		proj_scalar = np.dot( _r, s_hat )
 
-	if proj_scalar <= 0.0:
-		return -1
+		if proj_scalar <= 0.0: #infront of the body
+			eclipse_states[i] = -1
 
-	proj     = proj_scalar * s_hat
-	rej_norm = nt.norm( r - proj )
+		proj     = proj_scalar * s_hat
+		rej_norm = nt.norm( _r - proj )
 
-	if r_body == 0:
-		if check_umbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
-			return 2
-		elif check_penumbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
-			return 1
-		else:
-			return -1
+		if r_body == 0: #check for the diffrent kinds of eclipses
+			if check_umbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
+				eclipse_states[i] = 2
+			elif check_penumbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
+				eclipse_states[i] = 1
+			else:
+				eclipse_states[i] = -1
+		print(eclipse_states)
+	return max(eclipse_states) #returns the highest eclipse state
 
 def check_solar_eclipse_latlons( et, body0, body1, frame = 'J2000' ):
 	r_sun2body = spice.spkpos(
@@ -243,12 +251,12 @@ def check_penumbra( delta_ps, Dp, proj_scalar, rej_norm, r_body = 0 ):
 	kappa  = ( Xp + proj_scalar ) * math.tan( alphap )
 	return rej_norm - r_body <= kappa
 
-def calc_eclipse_array( ets, rs, body, frame = 'J2000', r_body = 0 ):
+def calc_eclipse_array( ets, rs, cb, bodies=[],frame = 'J2000', r_body = 0 ): #TODO: add in multiple bodies
 	eclipses = np.zeros( rs.shape[ 0 ] )
 
 	for n in range( len( ets ) ):
 		eclipses[ n ] = check_eclipse(
-			ets[ n ], rs[ n ], body, frame, r_body )
+			ets[ n ], rs[ n ], cb, bodies,frame, r_body )
 
 	return eclipses
 
