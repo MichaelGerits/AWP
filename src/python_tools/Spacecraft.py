@@ -169,7 +169,8 @@ class Spacecraft:
 		spice.furnsh( sd.leapseconds_kernel )
 		spice.furnsh( sd.pck00010 )
 		spice.furnsh( sd.de432 )
-		self.spice_kernels_loaded = [ sd.leapseconds_kernel, sd.de432, sd.pck00010 ]
+		spice.furnsh( sd.de421 )
+		self.spice_kernels_loaded = [ sd.leapseconds_kernel, sd.de432, sd.pck00010, sd.de421 ]
 
 		if self.config[ 'et0' ] is not None:
 			self.et0 = self.config[ 'et0' ]

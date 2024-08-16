@@ -159,7 +159,7 @@ def vinfinity_match( planet0, planet1, v0_sc, et0, tof0, args = {} ):
 	return tof, v0_sc_depart, v1_sc_arrive
 
 def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ): 
-	eclipse_states=(len(bodies)+1)*[0] #eclipse state relative to each body
+	eclipse_states=(len(bodies)+1)*[-1] #eclipse state relative to each body
 	i = 0
 	for body in bodies + [cb]: #go over all the asked bodies
 		r_body2cb = spice.spkpos(str( cb[ 'SPICE_ID' ] ), et, frame, 'LT', str( body[ 'SPICE_ID' ] ))[ 0 ]
@@ -168,11 +168,12 @@ def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ):
 		delta_ps    = nt.norm( r_sun2body )
 		s_hat       = r_sun2body / delta_ps #sun direction vector
 		
-		_r = r + r_body2cb #get the relative position vector
+		_r = r + r_body2cb #get the relative position vector to the bodyin question
 		proj_scalar = np.dot( _r, s_hat )
 
 		if proj_scalar <= 0.0: #infront of the body
 			eclipse_states[i] = -1
+			i+=1
 			continue
 
 		proj     = proj_scalar * s_hat
@@ -181,14 +182,17 @@ def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ):
 		if r_body == 0: #check for the diffrent kinds of eclipses
 			if check_umbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
 				eclipse_states[i] = 2
+				i+=1
 				continue
 			elif check_penumbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
 				eclipse_states[i] = 1
+				i+=1
 				continue
 			else:
 				eclipse_states[i] = -1
+				i+=1
 				continue
-		i+=1
+		
 	return max(eclipse_states) #returns the highest eclipse state
 
 def check_solar_eclipse_latlons( et, body0, body1, frame = 'J2000' ):
@@ -235,7 +239,7 @@ def calc_solar_eclipse_latlons( ets, body0, body1, frame = 'J2000' ):
 
 	for n in range( len( ets ) ):
 		eclipse = check_eclipse(
-			ets[ n ], body0, body1, frame )
+			ets[ n ], body0, body1, frame=frame )
 		if eclipse[ 0 ] == 2:
 			latlons.append( eclipse[ 1 ] )
 	return np.array( latlons )
