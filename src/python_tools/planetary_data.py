@@ -25,6 +25,22 @@ venus = {
 		'traj_color'      : 'y'
 		}
 
+mercury = {
+		'name'            : 'Mercury',
+		'spice_name'      : 'MERCURY BARYCENTER',
+		'SPICE_ID'        : 1,
+		'mass'            : 0.33010e24,
+		'mu'              : 0.33010e24 * G,
+		'J2'			  : 50.3e-6,
+		'radius'          : 2438.3,
+		'sma'             : 57.909e6,   # km
+		'SOI'             : 112000, # km
+		'deorbit_altitude': 100.0,       # km
+		'cmap'            : 'Grey',
+		'body_fixed_frame': 'IAU_MERCURY',
+		'traj_color'      : 'g'
+		}
+
 earth = {
 		'name'            : 'Earth',
 		'spice_name'      : 'EARTH',
