@@ -213,7 +213,7 @@ def plot_orbits( rs, args, vectors = [] ):
 		'traj_lws'     : 1,
 		'dist_unit'    : 'km',
 		'groundtracks' : False,
-		'cb_radius'    : 6378.0,
+		'cb_radius'    : 0,
 		'cb_SOI'       : None,
 		'cb_SOI_color' : 'c',
 		'cb_SOI_alpha' : 0.7,

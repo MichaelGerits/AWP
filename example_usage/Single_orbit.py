@@ -30,15 +30,15 @@ if __name__ == '__main__':
 	#coes = [semi-major axis(km) ,eccentricity ,inclination (deg) , ture anomaly, aop(deg), raan]
 	#state = state values are in unit km and km/s, rad and rad/s
 
-	coes = [ pd.moon[ 'radius' ] + 50, 0., 0, 0., 0., 0. ]
+	coes = [ pd.mercury[ 'radius' ] + 750, 0., 90, 0., 0., 0. ]
 	#coes = [ earth[ 'radius' ] + 1260, 0., 100.7, 0., 0., 90. ] #sun synchronous orbit
 	#coes = [ 42164, 0.24, 63.4, 0.0, 270, 100 ] #Tundra orbit
 	#coes = [ 26600, 0.74, 63.4, 0.0, 270, 0.0 ] #Molniya orbit
 	#state = [pd.moon[ 'radius' ] + 5000,  0., 0., 0.,  5.91874728, 0., np.cos(0), 0., 0., np.sin(0), 0., 0., 0.]
 	sc   = SC(
 			{
-			'cb' 		 : pd.moon,
-			'date0'		 : '2019-01-21',
+			'cb' 		 : pd.mercury,
+			'date0'		 : '2030-01-21',
 			'coes'       : coes,
 			#'orbit_state': state,
 			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these are the forces and torques that act with respect to the body axis
@@ -48,8 +48,8 @@ if __name__ == '__main__':
 									 [0., 0., 1.]]),
 			'drag_Cp'		 : np.array([-1., 0., 0.]), #position of the Cp's in the attitude body fixed frame
 			'solarPress_Cp'	 : np.array([-1., 0., 0.]),
-			'tspan'      : '10', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
-			'dt' : 500, #this decides at which points the integrator STORES points to be plotted
+			'tspan'      : '5', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
+			'dt' : 100, #this decides at which points the integrator STORES points to be plotted
 			'orbit_perts': {#'J2': True, 
 				   			#'n_bodies': [pd.moon, pd.sun, pd.jupiter, pd.saturn ],
 							#'grav_grad': True,
@@ -59,13 +59,13 @@ if __name__ == '__main__':
 							}
 			} )
 	sc.plot_states(args = {'show': True, 'time_unit': 'hours'})
-	sc.plot_coes(args = {'show': True, 'time_unit': 'days'})
-	sc.plot_sun_dirs(args = {'show': True, 'time_unit': 'days'})
-	sc.plot_eclipse_array([pd.earth], args = {'show': True, 'time_unit': 'days'})
+	#sc.plot_coes(args = {'show': True, 'time_unit': 'days'})
+	#sc.plot_sun_dirs(args = {'show': True, 'time_unit': 'days'})
+	sc.plot_eclipse_array( args = {'show': True, 'time_unit': 'days'})
 	
 	sc.plot_altitudes()
-	sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
-	sc.plot_3d(ani = False,  args = { 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
+	#sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
+	sc.plot_3d(ani = False,  args = {'cb_radius': pd.mercury['radius'], 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
 	
 
 

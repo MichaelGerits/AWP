@@ -180,11 +180,11 @@ def check_eclipse( et, r, cb, bodies=[], frame = 'J2000', r_body = 0 ):
 		rej_norm = nt.norm( _r - proj )
 
 		if r_body == 0: #check for the diffrent kinds of eclipses
-			if check_umbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
+			if check_umbra( delta_ps, body[ 'radius' ]*2, proj_scalar, rej_norm, r_body ):
 				eclipse_states[i] = 2
 				i+=1
 				continue
-			elif check_penumbra( delta_ps, body[ 'diameter' ], proj_scalar, rej_norm, r_body ):
+			elif check_penumbra( delta_ps, body[ 'radius' ]*2, proj_scalar, rej_norm, r_body ):
 				eclipse_states[i] = 1
 				i+=1
 				continue
