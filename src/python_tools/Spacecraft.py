@@ -109,6 +109,9 @@ class Spacecraft:
 		#loads the spice kernels from the spice_data.py file
 		self.load_spice_kernels()
 
+		self.pert_effects = []
+		self.t = []
+
 		if self.config[ 'propagate' ]:
 			self.propagate_orbit()
 
@@ -388,8 +391,10 @@ class Spacecraft:
 			effect = pert( et, state )
 			a += effect[0]
 			alpha += effect[1]
+			self.pert_effects.append([effect[0], effect[1]])
+			self.t.append(et-self.et0)
 
-			#print(effect)
+			#print(self.pert_effects)
 				
 
 		#the angular rate matrix to get the dot of the position quaternion
@@ -548,3 +553,5 @@ class Spacecraft:
 			self.calc_altitudes()
 
 		pt.plot_altitudes( self.ets, [ self.altitudes ], args )
+	def plot_perts(self):
+		pt.plot_pert_effects(np.array(self.t), np.array(self.pert_effects), args={'show':True})

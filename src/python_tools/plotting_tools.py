@@ -1425,3 +1425,106 @@ def animate_orbits(max_steps ,rs, vs, quats, times, args):
 		os.remove(os.path.join(os.path.dirname( os.path.realpath( __file__ ) ),os.path.join( '..', '..', 'Frames', f'{frame}.png' )))
 	print("Finished")
 	
+def plot_pert_effects( ets, pert_effects, args ):
+	_args = {
+		'figsize'      : ( 14, 8 ),
+		'colors'       : COLORS[ : ],
+		'dist_unit'    : 'km',
+		'time_unit'    : 'hours',
+		'lw'           : 2.5,
+		'r_hlines'     : [],
+		'v_hlines'     : [],
+		'hline_lstyles': 'dashed',
+		'title'        : 'Trajectories',
+		'xlim'         : None,
+		'acc_ylim'       : None,
+		'ang_ylim'       : None,
+		'legend'       : True,
+		'show'         : False,
+		'filename'     : False,
+		'dpi'          : 300,
+	}
+	for key in args.keys():
+		_args[ key ] = args[ key ]
+
+	fig, ( ax0, ax1 ) = plt.subplots( 2, 1,
+		figsize = _args[ 'figsize' ] )
+
+	_args[ 'xlabel' ]     = time_handler[ _args[ 'time_unit' ] ][ 'xlabel' ]
+	_args[ 'time_coeff' ] = time_handler[ _args[ 'time_unit' ] ][ 'coeff' ]
+	ts     = ets[:]
+	ts    /= _args[ 'time_coeff' ]
+
+	accs=pert_effects[:,0]
+	print(np.shape(accs), np.shape(ts))
+	angs=pert_effects[:,1]
+
+	accnorms = np.linalg.norm( accs, axis = 1 )
+	angnorms = np.linalg.norm( angs, axis = 1 )
+
+	if _args[ 'xlim' ] is None:
+		_args[ 'xlim' ] = [ 0, ts[ -1 ] ]
+
+	if _args[ 'acc_ylim' ] is None:
+		_args[ 'racc_ylim' ] = [ (accs.min() - accnorms.max()*0.05) * 1.1, (accnorms.max()) * 1.1 ]
+
+	if _args[ 'ang_ylim' ] is None:
+		_args[ 'ang_ylim' ] = [ (angs.min() - angnorms.max()*0.05) * 1.1, (angnorms.max()) * 1.1 ]
+
+
+	''' accelerations '''
+	ax0.plot( ts, accs[:, 0], 'r', label = r'$a_x$',
+		linewidth = _args[ 'lw' ] )
+	ax0.plot( ts, accs[:, 1], 'g', label = r'$a_y$',
+		linewidth = _args[ 'lw' ] )
+	ax0.plot( ts, accs[:, 2], 'b', label = r'$a_z$',
+		linewidth = _args[ 'lw' ] )
+	ax0.plot( ts, accnorms        , 'm', label = r'$Norms$',
+		linewidth = _args[ 'lw' ] )
+
+	ax0.grid( linestyle = 'dotted' )
+	ax0.set_xlim( _args[ 'xlim'   ] )
+	ax0.set_ylim( _args[ 'acc_ylim' ] )
+	ax0.set_ylabel( r'acceleration $(\frac{km}{s^2})$')
+
+	for hline in _args[ 'r_hlines' ]:
+		ax0.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],
+			color     = hline[ 'color' ],
+			linestyle = _args[ 'hline_lstyles' ] )
+
+	''' angular accelerations '''
+	ax1.plot( ts, angs[:, 0], 'r', label = r'$\alpha_x$',
+		linewidth = _args[ 'lw' ] )
+	ax1.plot( ts, angs[:, 1], 'g', label = r'$\alpha_y$',
+		linewidth = _args[ 'lw' ] )
+	ax1.plot( ts, angs[:, 2], 'b', label = r'$\alpha_z$',
+		linewidth = _args[ 'lw' ] )
+	ax1.plot( ts, angnorms        , 'm', label = r'$Norms$',
+		linewidth = _args[ 'lw' ] )
+
+	ax1.grid( linestyle = 'dotted' )
+	ax1.set_xlim( _args[ 'xlim'   ] )
+	ax1.set_ylim( _args[ 'ang_ylim' ] )
+	ax1.set_ylabel( r'Velocity $(\dfrac{rad}{s^2})$' )
+	ax1.set_xlabel( _args[ 'xlabel' ] )
+
+	for hline in _args[ 'v_hlines' ]:
+		ax1.hlines( hline[ 'val' ], ts[ 0 ], ts[ -1 ],
+			color     = hline[ 'color' ],
+			linestyle = _args[ 'hline_lstyles' ] )
+
+	plt.suptitle( _args[ 'title' ] )
+	plt.tight_layout()
+
+	if _args[ 'legend' ]:
+		ax0.legend()
+		ax1.legend()
+
+	if _args[ 'filename' ]:
+		plt.savefig( _args[ 'filename' ], dpi = _args[ 'dpi' ] )
+		print( 'Saved', _args[ 'filename' ] )
+
+	if _args[ 'show' ]:
+		plt.show()
+
+	plt.close()

@@ -42,31 +42,31 @@ if __name__ == '__main__':
 			'coes'       : coes,
 			#'orbit_state': state,
 			'actuators'	 : [0., 0., 0., 0., 0., 0.], #these are the forces and torques that act with respect to the body axis
-			'mass0'		 : 100.,
-			'inertia0'	 : np.array([[1., 0., 0.],
-						   			 [0., 1., 0.], 
-									 [0., 0., 1.]]),
+			'mass0'		 : 928.,
+			'inertia0'	 : np.array([[617.1, 0., 0.],
+						   			 [0., 481.9, 0.], 
+									 [0., 0., 589.1]]),
 			'drag_Cp'		 : np.array([-1., 0., 0.]), #position of the Cp's in the attitude body fixed frame
 			'solarPress_Cp'	 : np.array([-1., 0., 0.]),
-			'tspan'      : '5', #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
-			'dt' : 100, #this decides at which points the integrator STORES points to be plotted
+			'tspan'      : 3600*24*365*3.2, #Tspan is either the amount or seconds. If it is a string,it is the amount of orbits
+			'dt' : 500, #this decides at which points the integrator STORES points to be plotted
 			'orbit_perts': {#'J2': True, 
-				   			#'n_bodies': [pd.moon, pd.sun, pd.jupiter, pd.saturn ],
+				   			#'n_bodies': [pd.sun, pd.jupiter ],
 							#'grav_grad': True,
 							#'atmos_drag': {'CD': 2.2, 'A':10},
-							#'solar_press': {'ref': 1, 'A': 10, 'eclipse_bodies': []},
+							'solar_press': {'ref': 1, 'A': 7.5, 'eclipse_bodies': [pd.mercury]},
 							#'mag_torque':{'di_moment': np.array([1., 0., 0.])}
 							}
 			} )
 	sc.plot_states(args = {'show': True, 'time_unit': 'hours'})
 	#sc.plot_coes(args = {'show': True, 'time_unit': 'days'})
 	#sc.plot_sun_dirs(args = {'show': True, 'time_unit': 'days'})
-	sc.plot_eclipse_array( args = {'show': True, 'time_unit': 'days'})
-	
+	#sc.plot_eclipse_array( args = {'show': True, 'time_unit': 'days'})
+
 	sc.plot_altitudes()
 	#sc.plot_groundtracks( args = {'show': True, 'surface_body': 'earth'})
 	sc.plot_3d(ani = False,  args = {'cb_radius': pd.mercury['radius'], 'show': True, 'ani_name': 'orbit.gif', 'frames': None, 'showTime': True, 'fps': 5}) 	#frames decides how many frames that are stored are shown, none shows them all
-	
+	#sc.plot_perts()	
 
 
 
