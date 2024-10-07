@@ -435,7 +435,7 @@ class Spacecraft:
 			events       = self.stop_condition_functions, #stopping conditions
 			rtol         = self.config[ 'rtol' ], #relative accuracy lim
 			atol         = self.config[ 'atol' ], #absolute accuracy lim
-			#max_step 	 = 50, #TODO: fix the integrator/diffy_q to get rid of the errors
+			min_step 	 = 50, #TODO: fix the integrator/diffy_q to get rid of the errors
 			dense_output = self.config[ 'dense_output' ] )
 
 		self.states  = self.ode_sol.y.T
